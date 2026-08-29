@@ -148,7 +148,15 @@ Check these in order — each one failing points somewhere different:
 It reports whether each piece of configuration is usable — never what it contains:
 
 ```json
-{ "ok": true, "adminCredential": "ok", "missingPublicConfig": [], "usingEmulators": false }
+{
+  "ok": true,
+  "adminCredential": "ok",
+  "serviceAccountSet": true,
+  "missingPublicConfig": [],
+  "usingEmulators": false,
+  "node": "v22.x.x",
+  "commit": "dc83c94"
+}
 ```
 
 - `adminCredential: "missing"` — `FIREBASE_SERVICE_ACCOUNT_B64` is not set in this
@@ -156,6 +164,14 @@ It reports whether each piece of configuration is usable — never what it conta
   still render, which reads like a broken app rather than an unset variable.
 - `adminCredential: "unreadable"` — it is set but does not decode to a service
   account. Usually a line break introduced while pasting.
+- `adminCredential: "unloadable"` — the admin SDK itself will not import. Not a
+  configuration problem: the deployed Node version or the installed dependencies are
+  wrong. Check `node` in the same response — `firebase-admin` 14 requires **Node 22
+  or newer**, and Vercel picks the version from **Settings → General → Node.js
+  Version**. This is the state that produces a bare 500 on every server route at
+  once, health included, which is why the probe loads the SDK lazily.
+- `commit` — the deployed git SHA. If it is not the one you just pushed, the problem
+  is the deploy, not the code.
 - `missingPublicConfig: [...]` — those `NEXT_PUBLIC_*` keys are absent, so the
   browser cannot reach Firebase even if the server can.
 - `usingEmulators: true` — `NEXT_PUBLIC_USE_EMULATORS` is not `false`.

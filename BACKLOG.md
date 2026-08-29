@@ -137,10 +137,10 @@ Covers spec §4 (profile object) and §3 (gating).
 - [ ] `E9.2` Rules: only participants read or write; no thread exists without a match
 - [ ] `E9.3` `lastMessage` denormalised onto the match for the list view
 - [ ] `E9.4` Read receipts / unread counts
-- [ ] `E9.5` `suggest()` as a pure function implementing the six ordered rules in §1
-- [ ] `E9.6` Cafe-name detection in a thread, shared with the booking screen's
+- [x] `E9.5` `suggest()` as a pure function implementing the six ordered rules in §1
+- [x] `E9.6` Cafe-name detection in a thread, shared with the booking screen's
       "Mentioned in your chat" pin
-- [ ] `E9.7` Table-driven tests, one case per branch of `suggest()`
+- [x] `E9.7` Table-driven tests, one case per branch of `suggest()`
 - [ ] `E9.8` Report / block a match
 
 ## E10 — Coffee booking
@@ -148,7 +148,7 @@ Covers spec §4 (profile object) and §3 (gating).
 - [ ] `E10.1` 🔒 Pick a venue search provider (Google Places / Mapbox / Foursquare) —
       needs a billing decision
 - [ ] `E10.2` `GET /api/venues?near=` returning three nearby venues, plus manual search
-- [ ] `E10.3` Chat-mentioned cafe pinned first, tagged "Mentioned in your chat"
+- [x] `E10.3` Chat-mentioned cafe pinned first, tagged "Mentioned in your chat"
 - [ ] `E10.4` Two 30-minute slot proposals; `POST /api/bookings` with a
       propose to accept to confirmed state machine
 - [ ] `E10.5` System message posted into the thread on booking state changes

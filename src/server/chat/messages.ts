@@ -79,6 +79,8 @@ export type Thread = {
   suggestions: Suggestion[];
   booked: boolean;
   cafeMentioned: string | null;
+  /** Sent so the client can recompute suggestions locally as messages arrive. */
+  venues: Venue[];
 };
 
 export async function loadThread(uid: string, matchId: string): Promise<Thread> {
@@ -116,6 +118,7 @@ export async function loadThread(uid: string, matchId: string): Promise<Thread> 
     }),
     booked,
     cafeMentioned: booked ? null : (findCafeMention(messages, venues)?.name ?? null),
+    venues,
   };
 }
 

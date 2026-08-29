@@ -132,7 +132,7 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E9 — Chat
 
-- [ ] `E9.1` `POST /api/matches/{id}/messages` plus a realtime `onSnapshot` read stream
+- [x] `E9.1` `POST /api/matches/{id}/messages` plus a realtime `onSnapshot` read stream
 - [ ] `E9.2` Rules: only participants read or write; no thread exists without a match
 - [x] `E9.3` `lastMessage` denormalised onto the match for the list view
 - [ ] `E9.4` Read receipts / unread counts
@@ -146,13 +146,13 @@ Covers spec §4 (profile object) and §3 (gating).
 
 - [ ] `E10.1` 🔒 Pick a venue search provider (Google Places / Mapbox / Foursquare) —
       needs a billing decision
-- [ ] `E10.2` `GET /api/venues?near=` returning three nearby venues, plus manual search
+- [x] `E10.2` `GET /api/venues?near=` returning three nearby venues, plus manual search
 - [x] `E10.3` Chat-mentioned cafe pinned first, tagged "Mentioned in your chat"
-- [ ] `E10.4` Two 30-minute slot proposals; `POST /api/bookings` with a
+- [x] `E10.4` Two 30-minute slot proposals; `POST /api/bookings` with a
       propose to accept to confirmed state machine
-- [ ] `E10.5` System message posted into the thread on booking state changes
-- [ ] `E10.6` Post-booking suggestion set becomes active (rule 2 of `suggest()`)
-- [ ] `E10.7` Cancel and reschedule
+- [x] `E10.5` System message posted into the thread on booking state changes
+- [x] `E10.6` Post-booking suggestion set becomes active (rule 2 of `suggest()`)
+- [x] `E10.7` Cancel and reschedule
 
 ## E11 — Profile screen and activity
 

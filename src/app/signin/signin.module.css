@@ -1,0 +1,142 @@
+/* Onboarding step 0. Shares the one-question-per-screen frame of mock 1g. */
+
+.frame {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: var(--paper);
+  padding: 32px 20px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 40px;
+}
+
+.brandName {
+  font-family: var(--display);
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.brandBeta {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+
+.heading {
+  font-family: var(--display);
+  font-size: 31px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  margin: 0 0 10px;
+}
+
+.sub {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  margin: 0 0 24px;
+}
+
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  border: 1px solid var(--line-2);
+  border-radius: 12px;
+  padding: 15px;
+  min-height: var(--touch-min);
+  font-size: 14.5px;
+  font-weight: 500;
+  background: var(--paper);
+}
+
+.google:disabled {
+  opacity: var(--disabled-opacity);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+.label {
+  display: block;
+  font-size: 13.5px;
+  color: var(--ink-3);
+  margin: 0 0 7px;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.linkButton {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  min-height: var(--touch-min);
+  text-decoration: underline;
+}
+
+.linkButton:disabled {
+  opacity: var(--disabled-opacity);
+  text-decoration: none;
+}
+
+.alert {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--peach-ink);
+  background: var(--peach-bg);
+  border-radius: var(--r-box);
+  padding: 11px 13px;
+  margin: 14px 0 0;
+}
+
+.notice {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--green-ink);
+  background: var(--green-bg);
+  border-radius: var(--r-box);
+  padding: 11px 13px;
+  margin: 14px 0 0;
+}
+
+.demo {
+  margin-top: auto;
+  padding-top: 24px;
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--ink-3);
+}

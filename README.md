@@ -34,7 +34,15 @@ base64 service-account key. It is git-ignored and the key is never a file on dis
 npm run dev
 ```
 
-Sign in at `/signin`. The seeded demo account is `jordan.reyes@warmintro.test`.
+Sign in at `/signin`. The seeded demo account is `jordan.reyes@warmintro.test`
+(password `warmintro-demo`, also printed on the sign-in screen).
+
+The dev server listens on the local network too, so the same URL with this machine's
+IP opens on a phone. Worth doing — this is a mobile-first PWA built for a 375px
+viewport.
+
+[`docs/demo-script.md`](docs/demo-script.md) is a click-by-click walkthrough of what
+to show and what each step proves.
 
 ## Seeding the demo population
 

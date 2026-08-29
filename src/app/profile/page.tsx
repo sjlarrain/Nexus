@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { PROMPT_KEYS, PROMPT_QUESTIONS, PROMPT_HINT, LIMITS } from '@/lib/refdata/constants';
+import { PROMPT_KEYS, PROMPT_LABELS, PROMPT_HINT, LIMITS } from '@/lib/refdata/constants';
 import type { Card } from '@/lib/cards/card';
 import type { Profile } from '@/lib/schemas/profile';
 
@@ -128,7 +128,7 @@ export default function ProfilePage() {
         {PROMPT_KEYS.map((key) => (
           <p key={key}>
             <label>
-              {PROMPT_QUESTIONS[key]}
+              {PROMPT_LABELS[key]}
               <textarea
                 value={prompts[key] ?? ''}
                 maxLength={300}

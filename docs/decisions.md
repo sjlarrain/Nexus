@@ -185,12 +185,19 @@ consistent. Deriving means the feed cannot drift from the thing it describes, an
 adding it changed no write path at all. If the feed ever needs read state per event,
 that is the point to revisit this.
 
-## 2026-08-29 — Prompt labels stay neutral until the mocks land
+## 2026-08-29 — Prompts are free text, with neutral labels
 
-**Decision.** `PROMPT_QUESTIONS` labels `p1`/`p2`/`p3` as "Prompt one/two/three".
+**Decision** (owner, 2026-08-29). `p1`/`p2`/`p3` are **free text** — three short lines
+the user writes themselves, not answers to a fixed question set and not a prompt
+library they pick from. `PROMPT_LABELS` names them "Prompt one/two/three" for now.
 
-**Why.** The spec names the three fields but never says what they ask, and the seeded
-population stores free text in them ("The intro I wish someone had made for me",
-"Coffee order"), so they behave as self-authored lines rather than answers to fixed
-questions. Inventing questions now would mean re-seeding when the mocks contradict
-them. **Open for the owner:** are these fixed prompts a user picks from, or free text?
+**Why.** The spec names the three fields but never says what they ask. The seeded
+population already stores free text in them ("The intro I wish someone had made for
+me", "Coffee order"), so free text is also the reading that needs no re-seeding.
+Inventing questions would have meant re-seeding the moment the mocks contradicted
+them.
+
+**Consequence.** The labels are positional, not product copy, so the mocks can rename
+them without touching the schema, the fixtures, or any write path. If prompts ever
+become a pick-from list, that is a new constant plus a validation rule — not a change
+to the stored shape.

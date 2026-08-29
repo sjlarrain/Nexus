@@ -59,12 +59,15 @@ export const LIMITS = {
 /**
  * Profile prompts (spec section 4 names `p1`/`p2`/`p3` but never says what they ask).
  *
- * The seeded population stores free text in them — "The intro I wish someone had made
- * for me", "Coffee order" — so they behave as three self-authored lines, not answers
- * to fixed questions. Labels are deliberately neutral until the mocks settle it;
- * putting a question here that the mocks contradict would mean re-seeding.
+ * Decided by the owner: they are **free text** — three short lines the user writes
+ * themselves, not answers to a fixed question set. That matches the seeded
+ * population, which stores lines like "The intro I wish someone had made for me" and
+ * "Coffee order" directly in the fields.
+ *
+ * The labels below are therefore just positional. They stay neutral until the mocks
+ * say otherwise; nothing about them is product copy.
  */
-export const PROMPT_QUESTIONS = {
+export const PROMPT_LABELS = {
   p1: 'Prompt one',
   p2: 'Prompt two',
   p3: 'Prompt three',
@@ -72,5 +75,5 @@ export const PROMPT_QUESTIONS = {
 
 export const PROMPT_HINT = 'A short line about you. It shows on your card.';
 
-export type PromptKey = keyof typeof PROMPT_QUESTIONS;
+export type PromptKey = keyof typeof PROMPT_LABELS;
 export const PROMPT_KEYS = ['p1', 'p2', 'p3'] as const;

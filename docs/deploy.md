@@ -134,17 +134,37 @@ covers history rather than just `git ls-files`.
 
 Check these in order — each one failing points somewhere different:
 
-| Check                                               | If it fails                                                          |
-| --------------------------------------------------- | -------------------------------------------------------------------- |
-| `https://<domain>/api/health` returns `{"ok":true}` | The build or the deploy itself                                       |
-| The sign-in screen renders with fonts and styling   | Static assets or the build output                                    |
-| Email sign-in works                                 | `FIREBASE_SERVICE_ACCOUNT_B64`, or the admin SDK failing to parse it |
-| Google sign-in works                                | Authorised domains, step 5                                           |
-| The deck shows people                               | Firestore rules, or the `NEXT_PUBLIC_*` client config                |
-| A message sends and appears                         | Route handler plus the realtime listener                             |
+| Check                                              | If it fails                                                                          |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `https://<domain>/api/health` returns `"ok": true` | Read `adminCredential` and `missingPublicConfig` in the body — they name the problem |
+| The sign-in screen renders with fonts and styling  | Static assets or the build output                                                    |
+| Email sign-in works                                | `FIREBASE_SERVICE_ACCOUNT_B64`, or the admin SDK failing to parse it                 |
+| Google sign-in works                               | Authorised domains, step 5                                                           |
+| The deck shows people                              | Firestore rules, or the `NEXT_PUBLIC_*` client config                                |
+| A message sends and appears                        | Route handler plus the realtime listener                                             |
+
+### Read `/api/health` first
+
+It reports whether each piece of configuration is usable — never what it contains:
+
+```json
+{ "ok": true, "adminCredential": "ok", "missingPublicConfig": [], "usingEmulators": false }
+```
+
+- `adminCredential: "missing"` — `FIREBASE_SERVICE_ACCOUNT_B64` is not set in this
+  environment. Every route that touches Firestore will return 500 while the pages
+  still render, which reads like a broken app rather than an unset variable.
+- `adminCredential: "unreadable"` — it is set but does not decode to a service
+  account. Usually a line break introduced while pasting.
+- `missingPublicConfig: [...]` — those `NEXT_PUBLIC_*` keys are absent, so the
+  browser cannot reach Firebase even if the server can.
+- `usingEmulators: true` — `NEXT_PUBLIC_USE_EMULATORS` is not `false`.
+
+A variable added after a deployment does not reach it: **redeploy** after changing
+any of them, or Vercel keeps serving the build that never saw them.
 
 Vercel logs live under the project's **Logs** tab. There is no error tracking yet
-(`E14.3`), so that tab is the only place a server-side failure shows up.
+(`E14.3`), so that tab is the only other place a server-side failure shows up.
 
 ## Rolling back
 

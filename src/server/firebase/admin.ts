@@ -66,6 +66,24 @@ export const adminAuth = (): Auth => getAuth(adminApp());
 export const adminDb = (): Firestore => getFirestore(adminApp());
 export const adminBucket = () => getStorage(adminApp()).bucket();
 
+/**
+ * Can the admin SDK actually start? Used by the health probe so a misconfigured
+ * deployment is one request away instead of an opaque 500 on every route.
+ *
+ * Returns a status only — never the credential, never the underlying message, which
+ * is why the catch is deliberately blind (CLAUDE.md section 7).
+ */
+export function adminCredentialStatus(): 'ok' | 'missing' | 'unreadable' {
+  if (usingEmulators()) return 'ok';
+  if (!process.env.FIREBASE_SERVICE_ACCOUNT_B64) return 'missing';
+  try {
+    const sa = credentialsFromEnv();
+    return sa.project_id && sa.client_email && sa.private_key ? 'ok' : 'unreadable';
+  } catch {
+    return 'unreadable';
+  }
+}
+
 /** Point a non-Next process (seed scripts, tests) at the local emulators. */
 export function useEmulatorHosts(): void {
   process.env.FIRESTORE_EMULATOR_HOST ??= `127.0.0.1:${EMULATOR_PORTS.firestore}`;

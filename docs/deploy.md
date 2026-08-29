@@ -88,33 +88,45 @@ reads like a bug rather than a setting.
 
 Do this after the app is live if you want a fresh URL for every branch.
 
-1. Create an empty repo at `github.com/sjlarrain/warm-intro` — **no** README,
-   `.gitignore` or licence, so the first push is clean.
-2. Then, from the project folder:
-
-   ```bash
-   git remote add origin https://github.com/sjlarrain/warm-intro.git
-   ```
-
-   ```bash
-   git push -u origin master
-   ```
-
-3. In Vercel: **Settings → Git → Connect Git Repository**, pick the repo.
-
-Vercel treats the repo's default branch as production. This project's branch is
-`master`, so either keep that as the default in GitHub or rename it to `main` first —
-otherwise pushes deploy to preview and never to production.
-
-**Before the first push**, confirm no secret is tracked:
+The remote is already configured:
 
 ```bash
-git ls-files | grep -iE "env.local|adminsdk|service-?account"
+git remote -v
 ```
 
-That must print nothing. `.env.local` and any service-account JSON are git-ignored,
-and the patterns were widened in `.gitignore` after an early near-miss
-(`docs/decisions.md`).
+→ `origin  https://github.com/sjlarrain/Nexus.git`
+
+The repo was empty when it was added (`git ls-remote --heads origin` returned
+nothing), so the first push creates `master` with no conflict:
+
+```bash
+git push -u origin master
+```
+
+Then in Vercel: **Settings → Git → Connect Git Repository**, and pick `sjlarrain/Nexus`.
+
+Vercel deploys the repo's **default branch** to production. The local branch is
+`master`; the first push makes that the default on an empty repo, so it lines up. If
+the default is ever changed to `main`, rename the local branch to match or pushes will
+only ever produce preview deploys.
+
+### Before any push, re-run the history scan
+
+A push publishes every commit, not just the current files. Filenames alone are not
+enough — check the blobs too:
+
+```bash
+git grep -I -l -iE "BEGIN [A-Z ]*PRIVATE KEY|\"type\": *\"service_account\"" $(git rev-list --all)
+```
+
+```bash
+git grep -I -h -E "^(FIREBASE_SERVICE_ACCOUNT_B64|NEXT_PUBLIC_FIREBASE_[A-Z_]+)=.+" $(git rev-list --all)
+```
+
+Both must print nothing. As of 2026-08-29, across 41 commits, both do — the only
+tracked env file is `.env.example` with empty values. `.gitignore`'s secret patterns
+were widened after an early near-miss (`docs/decisions.md`); that is why this scan
+covers history rather than just `git ls-files`.
 
 ---
 

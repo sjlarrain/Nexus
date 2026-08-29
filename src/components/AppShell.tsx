@@ -24,10 +24,13 @@ const TABS: { href: Route; label: string; match: string }[] = [
 export default function AppShell({
   children,
   actions,
+  fill = false,
 }: {
   children: ReactNode;
   /** Right-hand app-bar buttons — Activity and Filters on the deck (mock 1a). */
   actions?: ReactNode;
+  /** The screen scrolls its own region instead of the whole column. */
+  fill?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -41,7 +44,7 @@ export default function AppShell({
         {actions ? <span className={styles.actions}>{actions}</span> : null}
       </header>
 
-      <main className={styles.main}>{children}</main>
+      <main className={fill ? `${styles.main} ${styles.mainFill}` : styles.main}>{children}</main>
 
       <nav className={styles.tabbar} aria-label="Sections">
         {TABS.map((tab) => {

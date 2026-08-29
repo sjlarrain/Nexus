@@ -1,12 +1,16 @@
 'use client';
 
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
+import AppShell from '@/components/AppShell';
+import { Input, hatchClass } from '@/components/ui';
 import { firebaseAuth, firebaseDb } from '@/lib/firebase/client';
 import { suggest } from '@/lib/chat/suggest';
 import type { Message, Venue } from '@/lib/schemas/entities';
 import type { Card } from '@/lib/cards/card';
+import styles from '../chat.module.css';
 
 /**
  * Chat with suggested replies (spec section 1).
@@ -17,8 +21,6 @@ import type { Card } from '@/lib/cards/card';
  *
  * Suggestions are recomputed locally from the same pure `suggest()` the server uses,
  * so they update the instant a message lands instead of after a round trip.
- *
- * UNSTYLED ON PURPOSE (CLAUDE.md section 2).
  */
 
 type Thread = {
@@ -147,70 +149,119 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
-  if (error) return <main role="alert">{error}</main>;
-  if (!thread) return <main>Loading...</main>;
+  if (error) {
+    return (
+      <AppShell>
+        <p className={styles.empty} role="alert">
+          {error}
+        </p>
+      </AppShell>
+    );
+  }
+
+  if (!thread) {
+    return (
+      <AppShell>
+        <p className={styles.empty}>Loading…</p>
+      </AppShell>
+    );
+  }
+
+  const photo = thread.counterpart.photos[0];
 
   return (
-    <main>
-      <h1>{thread.counterpart.name}</h1>
-      <p>{thread.counterpart.roleLine}</p>
+    <AppShell fill>
+      <div className={styles.thread}>
+        <header className={styles.header}>
+          <Link href="/chat" className={styles.back} aria-label="Back to conversations">
+            ←
+          </Link>
+          <div className={`${styles.thumb} ${hatchClass}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {photo ? <img src={photo.url} alt="" /> : null}
+          </div>
+          <div className={styles.headerBody}>
+            <h1 className={styles.rowName}>{thread.counterpart.name}</h1>
+            <p className={styles.rowRole}>{thread.counterpart.deckLine}</p>
+          </div>
+        </header>
 
-      {thread.booked ? (
-        <p>
-          Coffee is booked. <a href={`/chat/${matchId}/coffee`}>See the details</a>
-        </p>
-      ) : thread.cafeMentioned ? (
-        <p>
-          {thread.cafeMentioned} came up in this chat.{' '}
-          <a href={`/chat/${matchId}/coffee`}>Book it</a>
-        </p>
-      ) : (
-        <p>
-          <a href={`/chat/${matchId}/coffee`}>Set up a coffee</a>
-        </p>
-      )}
+        {thread.booked ? (
+          <p className={styles.coffeeBar}>
+            Coffee is booked.
+            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
+              See the details
+            </Link>
+          </p>
+        ) : thread.cafeMentioned ? (
+          <p className={styles.coffeeBar}>
+            {thread.cafeMentioned} came up in this chat.
+            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
+              Book it
+            </Link>
+          </p>
+        ) : (
+          <p className={`${styles.coffeeBar} ${styles.coffeeBarIdle}`}>
+            A 30-minute coffee is the point of all this.
+            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
+              Set one up
+            </Link>
+          </p>
+        )}
 
-      <ol>
-        {messages.map((message) => (
-          <li key={message.id}>
-            <strong>
-              {message.kind === 'system'
-                ? '—'
-                : message.from === me
-                  ? 'You'
-                  : thread.counterpart.name}
-            </strong>{' '}
-            {message.text}
-          </li>
-        ))}
-      </ol>
+        <div className={styles.messages}>
+          {messages.map((message) =>
+            message.kind === 'system' ? (
+              <p key={message.id} className={styles.system}>
+                {message.text}
+              </p>
+            ) : (
+              <div
+                key={message.id}
+                className={`${styles.bubble} ${
+                  message.from === me ? styles.fromMe : styles.fromThem
+                }`}
+              >
+                {message.text}
+              </div>
+            ),
+          )}
+        </div>
 
-      <h2>Suggested replies</h2>
-      <ul>
-        {suggestions.map((suggestion) => (
-          <li key={suggestion.text}>
-            <button type="button" disabled={sending} onClick={() => void send(suggestion.text)}>
-              {suggestion.pinned ? '★ ' : ''}
-              {suggestion.text}
-            </button>
-          </li>
-        ))}
-      </ul>
+        {suggestions.length > 0 ? (
+          <div className={styles.suggestions}>
+            {suggestions.map((suggestion) => (
+              <button
+                key={suggestion.text}
+                type="button"
+                disabled={sending}
+                onClick={() => void send(suggestion.text)}
+                className={`${styles.opener} ${suggestion.pinned ? styles.openerPinned : ''}`}
+              >
+                {suggestion.text}
+              </button>
+            ))}
+          </div>
+        ) : null}
 
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void send(draft);
-        }}
-      >
-        <label>
-          Message
-          <input value={draft} onChange={(event) => setDraft(event.target.value)} />
-        </label>
-        <button type="submit" disabled={sending || draft.trim().length === 0}>
-          Send
-        </button>
-      </form>
-    </main>
+        <form
+          className={styles.composer}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void send(draft);
+          }}
+        >
+          <Input
+            value={draft}
+            placeholder="Write a message"
+            aria-label="Message"
+            onChange={(event) => setDraft(event.target.value)}
+          />
+          <button type="submit" className={styles.send} disabled={sending || !draft.trim()}>
+            Send
+          </button>
+        </form>
+      </div>
+    </AppShell>
   );
 }

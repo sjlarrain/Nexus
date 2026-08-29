@@ -1,24 +1,33 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import { PROMPT_KEYS, PROMPT_LABELS, PROMPT_HINT, LIMITS } from '@/lib/refdata/constants';
-import type { Card } from '@/lib/cards/card';
+import AppShell from '@/components/AppShell';
+import { Badge, Card, Chip, Eyebrow, PrimaryButton, Quote, hatchClass } from '@/components/ui';
+import { LIMITS, PROMPT_HINT, PROMPT_KEYS, PROMPT_LABELS } from '@/lib/refdata/constants';
+import type { Card as CardType } from '@/lib/cards/card';
 import type { Profile } from '@/lib/schemas/profile';
+import styles from './profile.module.css';
 
 /**
  * Profile screen (spec section 1: "Card preview, reply rate, editable prompts, entry
  * to onboarding") — BACKLOG E11.1, E11.2, E11.3.
- *
- * UNSTYLED ON PURPOSE (CLAUDE.md section 2).
  */
 
 type Me = {
   uid: string;
-  card: Card;
+  card: CardType;
   profile: Profile;
   onboarding: { step: number; completed: boolean; publishedAt: number | null };
   replyRate: { rate: number | null; opened: number; replied: number; label: string | null };
   steps: { step: number; status: string; label: string }[];
+};
+
+const STEP_NAMES: Record<number, string> = {
+  1: 'Who you are',
+  2: 'Where you are today',
+  3: 'What you are looking for',
+  4: 'A little colour',
 };
 
 export default function ProfilePage() {
@@ -53,7 +62,7 @@ export default function ProfilePage() {
     };
   }, [load]);
 
-  async function savePrompts() {
+  async function savePrompts(): Promise<void> {
     setSaving(true);
     setStatus(null);
     try {
@@ -76,60 +85,85 @@ export default function ProfilePage() {
 
   if (error) {
     return (
-      <main role="alert">
-        {error} — <a href="/signin">sign in</a>
-      </main>
+      <AppShell>
+        <p className={styles.empty} role="alert">
+          {error} — <a href="/signin">sign in</a>
+        </p>
+      </AppShell>
     );
   }
-  if (!me) return <main>Loading...</main>;
+
+  if (!me) {
+    return (
+      <AppShell>
+        <p className={styles.empty}>Loading…</p>
+      </AppShell>
+    );
+  }
 
   const { card, replyRate } = me;
+  const photo = card.photos[0];
 
   return (
-    <main>
-      <h1>Your profile</h1>
-      <p>
-        <a href="/deck">Back to the deck</a>
-      </p>
+    <AppShell>
+      <div className={styles.frame}>
+        <h1 className={styles.heading}>Your card</h1>
+        <p className={styles.sub}>This is exactly what other people see.</p>
 
-      <h2>Card preview</h2>
-      <p>This is exactly what other people see.</p>
-      <section>
-        {card.badge ? <p>{card.badge}</p> : null}
-        <h3>{card.name}</h3>
-        <p>{card.roleLine}</p>
-        <p>{card.headline}</p>
-        <p>
-          {card.photos.length} of {LIMITS.photos} photos
-        </p>
-        {card.tags.length > 0 ? <p>{card.tags.join(' · ')}</p> : null}
-        {card.doors.length > 0 ? <p>Can open doors at: {card.doors.join(', ')}</p> : null}
-        {card.openTo.length > 0 ? <p>Open to: {card.openTo.join(', ')}</p> : null}
-      </section>
+        <Card className={styles.preview}>
+          <div className={`${styles.previewPhoto} ${hatchClass}`}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {photo ? <img src={photo.url} alt="" /> : null}
+            {card.badge ? <Badge className={styles.previewBadge}>{card.badge}</Badge> : null}
+          </div>
+          <div className={styles.previewBody}>
+            <h2 className={styles.name}>{card.name}</h2>
+            <p className={styles.role}>{card.roleLine}</p>
+            {card.headline ? <Quote>{card.headline}</Quote> : null}
+            <div className={styles.tags}>
+              {card.tags.map((tag) => (
+                <Chip key={tag}>{tag}</Chip>
+              ))}
+              <Chip>
+                {card.photos.length} of {LIMITS.photos} photos
+              </Chip>
+            </div>
+          </div>
+        </Card>
 
-      <h2>Reply rate</h2>
-      {replyRate.label ? (
-        <p>
-          {replyRate.label} — you replied to {replyRate.replied} of the {replyRate.opened}{' '}
-          conversations someone started with you.
-        </p>
-      ) : (
-        <p>Nobody has opened a conversation with you yet, so there is no rate to show.</p>
-      )}
+        <Eyebrow>Reply rate</Eyebrow>
+        <div className={styles.sectionLabel} />
+        <div className={styles.rate}>
+          {replyRate.label ? (
+            <>
+              <span className={styles.rateValue}>{replyRate.label}</span>
+              <p className={styles.rateNote}>
+                You replied to {replyRate.replied} of the {replyRate.opened} conversations someone
+                started with you.
+              </p>
+            </>
+          ) : (
+            <p className={styles.rateNote}>
+              Nobody has opened a conversation with you yet, so there is no rate to show.
+            </p>
+          )}
+        </div>
 
-      <h2>Prompts</h2>
-      <p>{PROMPT_HINT}</p>
-      <form
-        onSubmit={(event) => {
-          event.preventDefault();
-          void savePrompts();
-        }}
-      >
-        {PROMPT_KEYS.map((key) => (
-          <p key={key}>
-            <label>
-              {PROMPT_LABELS[key]}
+        <Eyebrow>Prompts</Eyebrow>
+        <div className={styles.sectionLabel} />
+        <p className={styles.sub}>{PROMPT_HINT}</p>
+
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void savePrompts();
+          }}
+        >
+          {PROMPT_KEYS.map((key) => (
+            <label key={key} className={styles.prompt}>
+              <Eyebrow>{PROMPT_LABELS[key]}</Eyebrow>
               <textarea
+                className={styles.textarea}
                 value={prompts[key] ?? ''}
                 maxLength={300}
                 onChange={(event) =>
@@ -137,22 +171,27 @@ export default function ProfilePage() {
                 }
               />
             </label>
-          </p>
-        ))}
-        <button type="submit" disabled={saving}>
-          Save prompts
-        </button>
-      </form>
-      {status ? <p role="status">{status}</p> : null}
+          ))}
+          <PrimaryButton type="submit" label="Save prompts" disabled={saving} />
+        </form>
 
-      <h2>Everything else</h2>
-      <ul>
-        {me.steps.map((step) => (
-          <li key={step.step}>
-            <a href={`/onboarding/${step.step}`}>Step {step.step}</a> — {step.status}
-          </li>
-        ))}
-      </ul>
-    </main>
+        {status ? (
+          <p className={styles.status} role="status">
+            {status}
+          </p>
+        ) : null}
+
+        <Eyebrow>Everything else</Eyebrow>
+        <div className={styles.sectionLabel} />
+        {me.steps
+          .filter((step) => step.step <= 4)
+          .map((step) => (
+            <Link key={step.step} href={`/onboarding/${step.step}`} className={styles.editRow}>
+              <span>{STEP_NAMES[step.step]}</span>
+              <span className={styles.editState}>{step.status}</span>
+            </Link>
+          ))}
+      </div>
+    </AppShell>
   );
 }

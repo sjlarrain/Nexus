@@ -1,0 +1,111 @@
+/* Coffee booking. Slot rows follow mock 1d, recoloured for a light surface. */
+
+.frame {
+  padding: 4px 18px 20px;
+}
+
+.heading {
+  font-family: var(--display);
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 6px 0 8px;
+}
+
+.sub {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  margin: 0 0 18px;
+}
+
+.sectionLabel {
+  display: block;
+  margin: 18px 0 9px;
+}
+
+.venue {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 15px;
+  margin-bottom: 8px;
+  background: var(--paper);
+  min-height: var(--touch-min);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.venueOn {
+  border: 1.5px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.venueName {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.venueAddress {
+  display: block;
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 15px;
+  margin-bottom: 8px;
+  background: var(--paper);
+  text-align: left;
+  min-height: var(--touch-min);
+}
+
+.slotOn {
+  border: 1.5px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.slotTime {
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.slotNote {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.search {
+  margin-bottom: 8px;
+}
+
+.status {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 12px 0 0;
+}
+
+.back {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  color: var(--ink-2);
+  margin-left: -12px;
+}

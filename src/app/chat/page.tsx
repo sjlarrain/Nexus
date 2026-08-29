@@ -1,13 +1,17 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import type { Card } from '@/lib/cards/card';
+import AppShell from '@/components/AppShell';
+import { Card, Chip, hatchClass } from '@/components/ui';
+import type { Card as CardType } from '@/lib/cards/card';
+import styles from './chat.module.css';
 
-/** Conversation list. UNSTYLED ON PURPOSE (CLAUDE.md section 2). */
+/** Conversation list. */
 
 type MatchSummary = {
   matchId: string;
-  counterpart: Card;
+  counterpart: CardType;
   lastMessage: { text: string; at: number; from: string } | null;
   booked: boolean;
   createdAt: number;
@@ -44,31 +48,55 @@ export default function MatchesPage() {
     };
   }, [fetchMatches]);
 
-  if (loading) return <main>Loading...</main>;
+  if (loading) {
+    return (
+      <AppShell>
+        <p className={styles.empty}>Loading…</p>
+      </AppShell>
+    );
+  }
+
   if (error) {
     return (
-      <main role="alert">
-        {error} — <a href="/signin">sign in</a>
-      </main>
+      <AppShell>
+        <p className={styles.empty} role="alert">
+          {error} — <a href="/signin">sign in</a>
+        </p>
+      </AppShell>
     );
   }
 
   return (
-    <main>
-      <h1>Conversations</h1>
-      {matches.length === 0 ? <p>No matches yet. Try the deck.</p> : null}
-      <ul>
-        {matches.map((match) => (
-          <li key={match.matchId}>
-            <a href={`/chat/${match.matchId}`}>
-              <strong>{match.counterpart.name}</strong>
-            </a>
-            <p>{match.counterpart.roleLine}</p>
-            <p>{match.lastMessage ? match.lastMessage.text : 'You matched. Say something.'}</p>
-            {match.booked ? <p>Coffee booked</p> : null}
-          </li>
-        ))}
-      </ul>
-    </main>
+    <AppShell>
+      {matches.length === 0 ? (
+        <p className={styles.empty}>No matches yet. Try the deck.</p>
+      ) : null}
+
+      <div className={styles.list}>
+        {matches.map((match) => {
+          const photo = match.counterpart.photos[0];
+          return (
+            <Link key={match.matchId} href={`/chat/${match.matchId}`}>
+              <Card className={styles.row}>
+                <div className={`${styles.thumb} ${hatchClass}`}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {photo ? <img src={photo.url} alt="" /> : null}
+                </div>
+
+                <div className={styles.rowBody}>
+                  <h2 className={styles.rowName}>{match.counterpart.name}</h2>
+                  <p className={styles.rowRole}>{match.counterpart.deckLine}</p>
+                  <p className={styles.preview}>
+                    {match.lastMessage ? match.lastMessage.text : 'You matched. Say something.'}
+                  </p>
+                </div>
+
+                {match.booked ? <Chip tone="amber">Coffee</Chip> : null}
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
+    </AppShell>
   );
 }

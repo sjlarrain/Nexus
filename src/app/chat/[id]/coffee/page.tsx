@@ -1,27 +1,36 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import AppShell from '@/components/AppShell';
+import { Chip, Eyebrow, Input, PrimaryButton } from '@/components/ui';
 import type { Venue } from '@/lib/schemas/entities';
+import styles from './coffee.module.css';
 
 /**
  * Coffee booking (spec section 1): three nearby venues, manual search below, two time
- * slots. A cafe named in the chat pins to the top tagged "Mentioned in your chat".
+ * slots. A café named in the chat pins to the top tagged "Mentioned in your chat".
  *
- * UNSTYLED ON PURPOSE (CLAUDE.md section 2). The venue list is seeded rather than
- * fetched from a places API — see docs/decisions.md.
+ * The match moment can hand a slot over in the query string, so picking a time there
+ * is not thrown away here.
  */
 
 type VenueRow = { venue: Venue; mentionedInChat: boolean };
 
 export default function CoffeePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: matchId } = use(params);
+  const searchParams = useSearchParams();
+  const preselected = Number(searchParams.get('slot')) || null;
 
   const [rows, setRows] = useState<VenueRow[]>([]);
   const [slots, setSlots] = useState<number[]>([]);
   const [search, setSearch] = useState('');
-  const [chosenVenue, setChosenVenue] = useState<string | null>(null);
+  const [venueId, setVenueId] = useState<string | null>(null);
+  const [chosenSlot, setChosenSlot] = useState<number | null>(preselected);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     const response = await fetch(`/api/matches/${matchId}/venues`);
@@ -39,7 +48,8 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
         if (cancelled) return;
         setRows(data.venues);
         setSlots(data.suggestedSlots);
-        setChosenVenue(data.venues[0]?.venue.id ?? null);
+        setVenueId(data.venues[0]?.venue.id ?? null);
+        setChosenSlot((current) => current ?? data.suggestedSlots[0] ?? null);
       })
       .catch((caught: unknown) => {
         if (!cancelled) setError((caught as Error).message);
@@ -49,88 +59,125 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
     };
   }, [load]);
 
-  async function propose() {
-    if (!chosenVenue) return;
-    const response = await fetch('/api/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ matchId, venueId: chosenVenue, slots }),
-    });
-    const body: unknown = await response.json();
-    setMessage(
-      response.ok
-        ? 'Sent. They pick one of the two times.'
-        : ((body as { error?: string }).error ?? 'Could not propose that.'),
+  async function propose(): Promise<void> {
+    if (!venueId) return;
+    setBusy(true);
+    try {
+      // Both times go over; the other side picks one (BACKLOG E10.4).
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId, venueId, slots }),
+      });
+      const body: unknown = await response.json();
+      setMessage(
+        response.ok
+          ? 'Sent. They pick one of the two times.'
+          : ((body as { error?: string }).error ?? 'Could not propose that.'),
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (error) {
+    return (
+      <AppShell>
+        <p className={styles.sub} role="alert">
+          {error}
+        </p>
+      </AppShell>
     );
   }
 
-  if (error) return <main role="alert">{error}</main>;
-
-  // Spec §1: three nearby venues, with manual search below them.
+  // Spec section 1: three nearby venues, with manual search below them.
   const nearby = rows.slice(0, 3);
-  const searched =
-    search.trim().length > 0
-      ? rows.filter((row) => row.venue.name.toLowerCase().includes(search.trim().toLowerCase()))
-      : [];
+  const term = search.trim().toLowerCase();
+  const searched = term
+    ? rows.filter((row) => row.venue.name.toLowerCase().includes(term))
+    : [];
+
+  function venueRow(row: VenueRow) {
+    return (
+      <button
+        key={row.venue.id}
+        type="button"
+        aria-pressed={venueId === row.venue.id}
+        onClick={() => setVenueId(row.venue.id)}
+        className={`${styles.venue} ${venueId === row.venue.id ? styles.venueOn : ''}`}
+      >
+        <span>
+          <span className={styles.venueName}>{row.venue.name}</span>
+          {row.venue.address ? (
+            <span className={styles.venueAddress}>{row.venue.address}</span>
+          ) : null}
+        </span>
+        {row.mentionedInChat ? <Chip tone="amber">Mentioned in your chat</Chip> : null}
+      </button>
+    );
+  }
 
   return (
-    <main>
-      <h1>Coffee</h1>
-      <p>
-        <a href={`/chat/${matchId}`}>Back to the chat</a>
-      </p>
+    <AppShell>
+      <div className={styles.frame}>
+        <Link href={`/chat/${matchId}`} className={styles.back} aria-label="Back to the chat">
+          ←
+        </Link>
 
-      <h2>Nearby</h2>
-      <ul>
-        {nearby.map((row) => (
-          <li key={row.venue.id}>
-            <label>
-              <input
-                type="radio"
-                name="venue"
-                checked={chosenVenue === row.venue.id}
-                onChange={() => setChosenVenue(row.venue.id)}
-              />
-              {row.venue.name} {row.venue.address ? `— ${row.venue.address}` : ''}
-              {row.mentionedInChat ? ' · Mentioned in your chat' : ''}
-            </label>
-          </li>
-        ))}
-      </ul>
+        <h1 className={styles.heading}>Where should it be?</h1>
+        <p className={styles.sub}>Thirty minutes, somewhere near both of you.</p>
 
-      <h2>Search</h2>
-      <label>
-        Find a place
-        <input value={search} onChange={(event) => setSearch(event.target.value)} />
-      </label>
-      <ul>
-        {searched.map((row) => (
-          <li key={row.venue.id}>
-            <label>
-              <input
-                type="radio"
-                name="venue"
-                checked={chosenVenue === row.venue.id}
-                onChange={() => setChosenVenue(row.venue.id)}
-              />
-              {row.venue.name}
-            </label>
-          </li>
-        ))}
-      </ul>
+        <Eyebrow>Nearby</Eyebrow>
+        <div className={styles.sectionLabel} />
+        {nearby.map(venueRow)}
 
-      <h2>Times</h2>
-      <ul>
+        <Eyebrow>Search</Eyebrow>
+        <div className={styles.sectionLabel} />
+        <div className={styles.search}>
+          <Input
+            value={search}
+            placeholder="Find a place"
+            aria-label="Find a place"
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </div>
+        {searched.map(venueRow)}
+
+        <Eyebrow>Times</Eyebrow>
+        <div className={styles.sectionLabel} />
         {slots.map((slot) => (
-          <li key={slot}>{new Date(slot).toLocaleString()} — 30 minutes</li>
+          <button
+            key={slot}
+            type="button"
+            aria-pressed={chosenSlot === slot}
+            onClick={() => setChosenSlot(slot)}
+            className={`${styles.slot} ${chosenSlot === slot ? styles.slotOn : ''}`}
+          >
+            <span className={styles.slotTime}>
+              {new Date(slot).toLocaleString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+              })}
+            </span>
+            <span className={styles.slotNote}>30 min</span>
+          </button>
         ))}
-      </ul>
 
-      <button type="button" disabled={!chosenVenue} onClick={() => void propose()}>
-        Propose these times
-      </button>
+        <PrimaryButton
+          label="Propose these times"
+          disabled={!venueId || busy}
+          onClick={() => void propose()}
+        />
 
-      {message ? <p role="status">{message}</p> : null}
-    </main>
+        {message ? (
+          <p className={styles.status} role="status">
+            {message}
+          </p>
+        ) : null}
+      </div>
+    </AppShell>
   );
 }

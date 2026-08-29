@@ -252,3 +252,32 @@ type, and it removes the late-font layout shift.
 Not a decision yet. The mock's app bar reads **PlanUp**; the spec, the repo and
 `metadata.title` read **Warm Intro**. Nothing has been renamed either way pending
 the owner's answer.
+
+## 2026-08-29 — Mock frames chosen: 1a card, 1d match moment, 1g onboarding
+
+**Decision** (owner, 2026-08-29). The mock offers three either/or pairs. Chosen: the
+**1a** deck card (photo above, body below), the **1d** match moment (dark,
+coffee-first), and **1g** onboarding (one question per screen). The name stays *Warm
+Intro* — the owner had no preference, so the option with no churn across the repo,
+spec, metadata and seeded emails won.
+
+**Why these.** 1a's fields all exist in the card payload, where 1b's split card needs
+a per-company referral-slot count we do not store and 1c leans entirely on photo
+quality we do not control. 1d matches spec section 1 — "primary action pushes to a
+30-minute coffee". 1g maps one-to-one onto the five steps and per-step gates that are
+already built and tested; 1f's checklist has seven rows and would have meant
+regrouping either the backend steps or the design.
+
+**Not built from the chosen frames:** the "n mutual" chip, "he's free" slot labels
+and the "$16–$28" price range. Each needs data the app does not have (a connection
+graph, calendar availability, venue pricing). See `docs/design.md` section 3.
+
+## 2026-08-29 — Onboarding can fill photo slots with placeholders
+
+**Decision.** Tapping a photo slot in step 1 assigns a deterministic placeholder URL,
+labelled as such in the UI.
+
+**Why.** Step 1's gate requires three photos and photo upload (E5) is blocked on the
+Blaze plan. Without this, nobody can complete onboarding — including anyone signing
+up live during the demo. The fixtures already use external placeholder URLs, so this
+adds no new dependency, and E5 replaces it with a real upload when Storage exists.

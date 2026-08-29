@@ -1,22 +1,27 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import type { Card } from '@/lib/cards/card';
+import AppShell from '@/components/AppShell';
+import MatchMoment from '@/components/MatchMoment';
+import { Card, Chip, hatchClass } from '@/components/ui';
+import type { Card as CardType } from '@/lib/cards/card';
+import styles from './likes.module.css';
 
 /**
- * Likes — people who already said yes (spec section 1).
- * Saying yes back matches instantly.
+ * Likes — people who already said yes (spec section 1). Saying yes back matches
+ * instantly, which is why the match moment is raised from here as well as the deck.
  *
- * UNSTYLED ON PURPOSE (CLAUDE.md section 2).
+ * A swipe-up arrives as a priority ask and sorts to the top, marked with the amber
+ * chip the mock reserves for exactly that kind of emphasis.
  */
 
-type LikeCard = Card & { priority: boolean; likedAt: number };
+type LikeCard = CardType & { priority: boolean; likedAt: number };
 
 export default function LikesPage() {
   const [likes, setLikes] = useState<LikeCard[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [matched, setMatched] = useState<{ matchId: string; name: string } | null>(null);
+  const [matched, setMatched] = useState<{ matchId: string; card: CardType } | null>(null);
 
   const fetchLikes = useCallback(async (): Promise<LikeCard[]> => {
     const response = await fetch('/api/likes');
@@ -42,7 +47,7 @@ export default function LikesPage() {
     };
   }, [fetchLikes]);
 
-  async function respond(card: LikeCard, action: 'yes' | 'no') {
+  async function respond(card: LikeCard, action: 'yes' | 'no'): Promise<void> {
     setLikes((current) => current.filter((like) => like.uid !== card.uid));
 
     const response = await fetch('/api/swipe', {
@@ -57,53 +62,87 @@ export default function LikesPage() {
       return;
     }
 
-    // Yes-back on an inbound like always matches, since they already said yes.
+    // Yes-back on an inbound like always matches: they already said yes.
     const result = body as { matched: boolean; matchId: string | null };
     if (result.matched && result.matchId) {
-      setMatched({ matchId: result.matchId, name: card.name });
+      setMatched({ matchId: result.matchId, card });
     }
   }
 
-  if (loading) return <main>Loading...</main>;
+  if (loading) {
+    return (
+      <AppShell>
+        <p className={styles.empty}>Loading…</p>
+      </AppShell>
+    );
+  }
+
   if (error) {
     return (
-      <main role="alert">
-        {error} — <a href="/signin">sign in</a>
-      </main>
+      <AppShell>
+        <p className={styles.empty} role="alert">
+          {error} — <a href="/signin">sign in</a>
+        </p>
+      </AppShell>
     );
   }
 
   return (
-    <main>
-      <h1>Likes</h1>
-
-      {matched ? (
-        <p role="status">
-          You matched with {matched.name}. <a href={`/chat/${matched.matchId}`}>Say hello</a>
-        </p>
+    <AppShell>
+      {likes.length === 0 ? (
+        <p className={styles.empty}>Nobody is waiting on you yet. Keep swiping.</p>
       ) : null}
 
-      {likes.length === 0 ? <p>Nobody is waiting on you.</p> : null}
+      <div className={styles.list}>
+        {likes.map((like) => {
+          const photo = like.photos[0];
+          return (
+            <Card key={like.uid} className={styles.row}>
+              <div className={`${styles.thumb} ${hatchClass}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {photo ? <img src={photo.url} alt="" /> : null}
+              </div>
 
-      <ul>
-        {likes.map((like) => (
-          <li key={like.uid}>
-            {/* A swipe-up is a priority ask and sorts to the top (spec §1). */}
-            {like.priority ? <p>Priority ask</p> : null}
-            <h2>{like.name}</h2>
-            <p>{like.roleLine}</p>
-            <p>{like.headline}</p>
-            {like.doors.length > 0 ? <p>Can open doors at: {like.doors.join(', ')}</p> : null}
+              <div className={styles.body}>
+                {like.priority ? (
+                  <div className={styles.priority}>
+                    <Chip tone="amber">Priority ask</Chip>
+                  </div>
+                ) : null}
 
-            <button type="button" onClick={() => void respond(like, 'no')}>
-              Pass
-            </button>
-            <button type="button" onClick={() => void respond(like, 'yes')}>
-              Yes back
-            </button>
-          </li>
-        ))}
-      </ul>
-    </main>
+                <h2 className={styles.name}>{like.name}</h2>
+                <p className={styles.role}>{like.deckLine}</p>
+                {like.headline ? <p className={styles.headline}>{like.headline}</p> : null}
+
+                <div className={styles.buttons}>
+                  <button
+                    type="button"
+                    className={styles.pass}
+                    onClick={() => void respond(like, 'no')}
+                  >
+                    Pass
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.yes}
+                    onClick={() => void respond(like, 'yes')}
+                  >
+                    Yes back
+                  </button>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {matched ? (
+        <MatchMoment
+          matchId={matched.matchId}
+          counterpart={matched.card}
+          onDismiss={() => setMatched(null)}
+        />
+      ) : null}
+    </AppShell>
   );
 }

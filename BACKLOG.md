@@ -205,15 +205,17 @@ mock shows that the backend cannot yet supply.
 - [x] `E15.2` Primitives in `src/components/ui`: card, multi-select grid, input,
       chips, badges, primary button (disabled = ink 28% with the gate's validation
       message as its label), 44px touch targets
-- [ ] `E15.3` Onboarding steps 0-5 wired to E3
+- [x] `E15.3` Onboarding steps 1-5 (mock 1g) wired to E3, with the gate running
+      client-side so Continue names what is missing as you type
 - [~] `E15.4` Deck (mock 1a): drag thresholds dx ±105 / dy −110 done, exit animation,
       photo stepper, activity feed. **Filters sheet still to build** — the chips are
       display-only
 - [x] `E15.8` Match moment (mock 1d, coffee-first) — chosen slot carries into the
       café screen
-- [ ] `E15.5` Likes, match moment, chat with suggested replies, booking, profile
-- [ ] `E15.6` `flex-shrink: 0` on fixed-proportion blocks in scrolling step columns
-      (spec §6 — the column squashes cards otherwise)
+- [x] `E15.5` Likes, match moment, chat with suggested replies, booking, profile
+- [x] `E15.6` `flex-shrink: 0` on fixed-proportion blocks — the card photo is
+      `flex: 0 0 auto` and the photo slots use `aspect-ratio` in a grid, so neither
+      squashes inside a scrolling column (spec §6)
 - [ ] `E15.7` Accessibility pass and mobile viewport testing
 
 ---

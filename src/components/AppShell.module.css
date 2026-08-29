@@ -1,9 +1,11 @@
 /* App chrome from mock 1a: app bar, filter row, tab bar. */
 
+/* Fixed to the viewport, not min-height: the tab bar belongs at the bottom of the
+   screen the way it does in the mock's phone, and the content between scrolls. */
 .shell {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
   max-width: 420px;
   margin: 0 auto;
   background: var(--paper-2);
@@ -44,8 +46,15 @@
 .main {
   flex: 1 1 auto;
   min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* For screens that manage their own scrolling — the chat thread keeps its composer
+   and suggestions in view and scrolls only the messages. */
+.mainFill {
+  overflow: hidden;
 }
 
 .tabbar {
@@ -54,8 +63,7 @@
   padding: 10px 34px 6px;
   border-top: 1px solid var(--line);
   background: var(--paper-2);
-  position: sticky;
-  bottom: 0;
+  flex: 0 0 auto;
 }
 
 .tab {

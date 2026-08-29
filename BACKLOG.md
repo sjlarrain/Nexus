@@ -55,12 +55,12 @@ The demo lives or dies on the deck feeling full. This gets its own epic.
 
 ## E2 — Auth (onboarding step 0)
 
-- [ ] `E2.1` Google sign-in + email/password sign-in via Firebase Auth, including
+- [x] `E2.1` Google sign-in + email/password sign-in via Firebase Auth, including
       password rules and a reset flow
 - [x] `E2.2` Session: ID token to httpOnly session cookie, verified in route handlers
 - [x] `E2.3` `requireUser()` server helper returning a typed `AuthedUser`
 - [x] `E2.4` On first sign-in, create `users/{uid}` shell + `users/{uid}/private/meta`
-- [ ] `E2.5` Route protection: unauthenticated to auth screen; authenticated but
+- [x] `E2.5` Route protection: unauthenticated to auth screen; authenticated but
       unpublished resumes onboarding at the saved step
 - [ ] `E2.6` Sign-out and account deletion (removes profile, swipes, inbox, storage)
 

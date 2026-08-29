@@ -90,6 +90,19 @@ const PROMPT_3 = [
   'The best career advice I ignored',
 ];
 
+/**
+ * Real populations cluster in a few metros, and the deck's same-city bonus is
+ * invisible if 42 people are spread over 50 states. Roughly half the population
+ * lands in a hub, San Francisco weighted highest because the demo viewer is there.
+ */
+const HUB_CITIES: readonly [string, string][] = [
+  ['San Francisco, CA', 'CA'],
+  ['San Francisco, CA', 'CA'],
+  ['New York, NY', 'NY'],
+  ['Austin, TX', 'TX'],
+  ['Seattle, WA', 'WA'],
+];
+
 const SCHOOLS = [
   'UT Austin', 'Stanford', 'UC Berkeley', 'NYU', 'Columbia', 'Michigan', 'Georgia Tech',
   'Northwestern', 'UCLA', 'Carnegie Mellon', 'Duke', 'Cornell', 'USC', 'Wharton', 'MIT',
@@ -121,8 +134,9 @@ export function generateFixture(index: number, seed = 1): Fixture {
   const last = pick(random, LAST_NAMES);
   const uid = `demo-${String(index).padStart(3, '0')}`;
 
-  const state = pick(random, Object.keys(CITIES_BY_STATE)) as StateCode;
-  const city = formatCity(pick(random, CITIES_BY_STATE[state]), state);
+  const hub = random() < 0.5 ? pick(random, HUB_CITIES) : null;
+  const state = hub ? (hub[1] as StateCode) : (pick(random, Object.keys(CITIES_BY_STATE)) as StateCode);
+  const city = hub ? hub[0] : formatCity(pick(random, CITIES_BY_STATE[state]), state);
 
   const lane: FunctionName = pick(random, FUNCTIONS);
   const titles = TITLES_BY_FUNCTION[lane] ?? [lane];

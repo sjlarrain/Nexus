@@ -14,24 +14,24 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · 🔒 blocked on the own
 
 ## E0 — Foundations
 
-- [ ] `E0.1` Scaffold Next.js App Router + TypeScript strict, `src/` layout
-- [ ] `E0.2` ESLint + Prettier + `npm run typecheck` / `lint` / `test` scripts
-- [ ] `E0.3` Vitest set up; one smoke test that actually runs in CI
+- [x] `E0.1` Scaffold Next.js App Router + TypeScript strict, `src/` layout
+- [x] `E0.2` ESLint + Prettier + `npm run typecheck` / `lint` / `test` scripts
+- [x] `E0.3` Vitest set up; one smoke test that actually runs in CI
 - [ ] `E0.4` Folder skeleton per `CLAUDE.md` §4
-- [ ] `E0.5` `.env.example` with every key the app reads, documented inline
+- [x] `E0.5` `.env.example` with every key the app reads, documented inline
 - [ ] `E0.6` GitHub Actions: typecheck + lint + test on push
-- [ ] `E0.7` Path aliases (`@/lib`, `@/server`) + lint rule forbidding `@/server`
+- [x] `E0.7` Path aliases (`@/lib`, `@/server`) + lint rule forbidding `@/server`
       imports from client components
 
 ## E1 — Firebase & environment
 
 - [ ] `E1.1` 🔒 Owner creates one Firebase project (demo/prod) and hands over the web
       config + a service-account key. Local dev runs on emulators only.
-- [ ] `E1.2` Client SDK init (`src/lib/firebase/client.ts`), singleton-safe under HMR
-- [ ] `E1.3` Admin SDK init (`src/server/firebase/admin.ts`) from a base64 service
+- [x] `E1.2` Client SDK init (`src/lib/firebase/client.ts`), singleton-safe under HMR
+- [x] `E1.3` Admin SDK init (`src/server/firebase/admin.ts`) from a base64 service
       account env var; never a JSON file on disk
-- [ ] `E1.4` Firebase Emulator Suite (auth, firestore, storage) + `npm run dev:emul`
-- [ ] `E1.5` `firestore.indexes.json` committed and deployed from CI
+- [x] `E1.4` Firebase Emulator Suite (auth, firestore, storage) + `npm run dev:emul`
+- [x] `E1.5` `firestore.indexes.json` committed and deployed from CI
 
 ## E1b — Simulated data toolkit (build-a-thon priority)
 
@@ -69,9 +69,9 @@ The demo lives or dies on the deck feeling full. This gets its own epic.
 
 Covers spec §4 (profile object) and §3 (gating).
 
-- [ ] `E3.1` Zod schemas in `src/lib/schemas/profile.ts` mirroring spec §4 exactly,
+- [x] `E3.1` Zod schemas in `src/lib/schemas/profile.ts` mirroring spec §4 exactly,
       including `mode: 'working' | 'student' | 'looking'`
-- [ ] `E3.2` Per-step gate refinements matching the §3 table, each returning the
+- [x] `E3.2` Per-step gate refinements matching the §3 table, each returning the
       missing-field message used as the disabled button label
 - [ ] `E3.3` Draft-state fields (`schoolDraft`, `referDraft`, ...) stay out of the
       persisted document — they are form state, not profile data
@@ -80,7 +80,7 @@ Covers spec §4 (profile object) and §3 (gating).
       transition and on explicit save
 - [ ] `E3.6` `POST /api/profile/publish` — full validation, sets `onboarding.completed`,
       makes the user visible in decks
-- [ ] `E3.7` Unit tests for every row of the §3 gate table, pass and fail cases
+- [x] `E3.7` Unit tests for every row of the §3 gate table, pass and fail cases
 
 ## E4 — Reference data
 
@@ -164,7 +164,7 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E12 — Security and abuse
 
-- [ ] `E12.1` `firestore.rules` covering every collection in the data model
+- [x] `E12.1` `firestore.rules` covering every collection in the data model
 - [ ] `E12.2` Rules unit tests against the emulator — one per client-reachable path
 - [ ] `E12.3` Storage rules tests
 - [ ] `E12.4` Rate limits on swipe, message, booking, profile write

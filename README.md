@@ -58,6 +58,7 @@ npm run typecheck
 npm run lint
 npm test             # unit tests
 npm run verify:swipe # checks the swipe and match invariants against the live project
+npm run verify:rules # checks the deployed security rules, path by path
 ```
 
 `npm test` covers the pure logic: profile gates, deck ranking, reply suggestions,
@@ -65,8 +66,11 @@ cafe detection, match ids, reply rate and the activity feed. `verify:swipe` runs
 against real Firestore, because mutual-match detection is a concurrency property and
 a mock would not prove it.
 
-Firestore rules tests are not wired up yet — the emulator needs a JDK that is not
-installed on the current machine (`E12.2`, and see `docs/decisions.md`).
+`verify:rules` is the one to run before showing this to anyone. It signs in as
+throwaway users with the client SDK — the same path a browser takes — and asserts what
+each of them can and cannot reach: a stranger cannot read your chat, nobody writes a
+message from the client, and no one can award themselves a reply rate. Both verify
+scripts clean up after themselves, including on failure.
 
 ## Deploying
 

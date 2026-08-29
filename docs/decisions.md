@@ -201,3 +201,27 @@ them.
 them without touching the schema, the fixtures, or any write path. If prompts ever
 become a pick-from list, that is a new constant plus a validation rule — not a change
 to the stored shape.
+
+## 2026-08-29 — Rules are verified against the deployed project, not the emulator
+
+**Decision.** `npm run verify:rules` signs in as throwaway users with the **client**
+SDK and asserts every client-reachable path against the rules that are actually
+deployed. The emulator-based rules tests in `E12.2` are not built.
+
+**Why.** The emulator needs a JDK that is not installed on this machine, and
+installing one sits outside the project folder. Two things make the live approach
+better than a workaround anyway: it exercises the rules that are really in force
+rather than a local copy that can drift, and it uses the same SDK a browser uses. The
+cost is that it needs network and writes to the real project — mitigated by prefixing
+everything `zz-rules-` and deleting it in a `finally`, verified afterwards to leave
+the 42-person demo population untouched.
+
+**What it proves** (30 checks): a signed-in stranger cannot read another person's
+`private/meta`, match, messages, inbox likes or booking; nobody can write a message
+from the client, so `lastMessage` cannot be made stale; no user can award themselves
+a `replyRate` or publish themselves by writing `onboarding`; an unpublished user
+cannot read other profiles; an unauthenticated client can read nothing at all. It
+also asserts the *permits* — a published user can read another published profile —
+because a rule that denies too much breaks the product just as surely.
+
+**Still open.** Storage rules (`E12.3`) cannot be tested because Storage needs Blaze.

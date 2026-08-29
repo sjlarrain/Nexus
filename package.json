@@ -17,7 +17,8 @@
     "check:firebase": "tsx --conditions=react-server --env-file=.env.local scripts/check-firebase.ts",
     "deploy:rules": "tsx --env-file=.env.local scripts/deploy-rules.ts",
     "demo:deck": "tsx --conditions=react-server --env-file=.env.local scripts/demo-deck.ts",
-    "verify:swipe": "tsx --conditions=react-server --env-file=.env.local scripts/verify-swipe.ts"
+    "verify:swipe": "tsx --conditions=react-server --env-file=.env.local scripts/verify-swipe.ts",
+    "verify:rules": "tsx --conditions=react-server --env-file=.env.local scripts/verify-rules.ts"
   },
   "dependencies": {
     "firebase": "^12.18.0",

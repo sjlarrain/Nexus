@@ -134,7 +134,8 @@ Covers spec §4 (profile object) and §3 (gating).
 ## E9 — Chat
 
 - [x] `E9.1` `POST /api/matches/{id}/messages` plus a realtime `onSnapshot` read stream
-- [ ] `E9.2` Rules: only participants read or write; no thread exists without a match
+- [x] `E9.2` Rules: only participants read; nobody writes a message from the client,
+      so a thread cannot exist without the server creating it — covered by `verify:rules`
 - [x] `E9.3` `lastMessage` denormalised onto the match for the list view
 - [ ] `E9.4` Read receipts / unread counts
 - [x] `E9.5` `suggest()` as a pure function implementing the six ordered rules in §1
@@ -167,8 +168,9 @@ Covers spec §4 (profile object) and §3 (gating).
 ## E12 — Security and abuse
 
 - [x] `E12.1` `firestore.rules` covering every collection in the data model
-- [ ] `E12.2` Rules unit tests against the emulator — one per client-reachable path
-- [ ] `E12.3` Storage rules tests
+- [x] `E12.2` Rules verification — one check per client-reachable path, run against
+      the *deployed* rules with real client sessions (`npm run verify:rules`, 30 checks)
+- [ ] `E12.3` 🔒 Storage rules tests — needs Storage, which needs Blaze
 - [ ] `E12.4` Rate limits on swipe, message, booking, profile write
 - [x] `E12.5` Input sanitisation and length caps — `LIMITS` enforces headline 80,
       bio 300, message 2000 in the Zod schemas and `sendMessage`; user text is stored
@@ -214,9 +216,7 @@ Nothing here starts until the mocks land in `docs/mocks/`.
 Tracked here until answered, then moved to `docs/decisions.md`.
 
 1. **Undo swipe** — in scope for v1? (`E7.5`)
-2. **Rules tests** — the emulator needs a JDK that is not installed. Install Java, or
-   write the tests against the live project with throwaway users? (`E12.2`, `E12.3`)
-3. **Transactional email** — provider, or cut for the demo? (`E13.2`)
+2. **Transactional email** — provider, or cut for the demo? (`E13.2`)
 
 Answered (see [`docs/decisions.md`](docs/decisions.md)): environments, platform, email
 sign-in method, deck scope, LinkedIn, venue source, reply-rate definition, demo date.

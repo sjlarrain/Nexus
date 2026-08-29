@@ -168,7 +168,9 @@ Covers spec §4 (profile object) and §3 (gating).
 - [ ] `E12.2` Rules unit tests against the emulator — one per client-reachable path
 - [ ] `E12.3` Storage rules tests
 - [ ] `E12.4` Rate limits on swipe, message, booking, profile write
-- [ ] `E12.5` Input sanitisation and length caps (headline 80, bio 300 per spec §2)
+- [x] `E12.5` Input sanitisation and length caps — `LIMITS` enforces headline 80,
+      bio 300, message 2000 in the Zod schemas and `sendMessage`; user text is stored
+      as plain text and escaped by React on render, never injected as HTML
 - [ ] `E12.6` Block list honoured by deck, likes, and chat
 - [ ] `E12.7` PII review: nothing sensitive in `users/{uid}`; secrets in `private/`
 

@@ -31,9 +31,10 @@ blob-report/
 !.env.example
 *.pem
 *.key
-*-service-account*.json
-serviceAccountKey*.json
-firebase-adminsdk*.json
+*service-account*.json
+*serviceaccount*.json
+*serviceAccountKey*.json
+*firebase-adminsdk*.json
 
 # --- firebase ---
 .firebase/

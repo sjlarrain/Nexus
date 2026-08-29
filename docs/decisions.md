@@ -58,3 +58,20 @@ Next.js route handlers using the Admin SDK, and is denied in `firestore.rules`.
 **Why:** those writes assert something about *another* user, which a client cannot be
 trusted with. It also keeps the rules small enough to read.
 **Decided by:** Claude.
+
+## 2026-08-28 — Firebase project `nexus-6c806`
+**Decision:** Single project `nexus-6c806` (owner-created). Web config and a
+base64-encoded service account live in `.env.local`, which is git-ignored.
+**Note:** the service-account JSON file sits in the repo root. `.gitignore` was
+widened to `*firebase-adminsdk*.json` — the original `firebase-adminsdk*.json`
+pattern did not match the downloaded filename, which starts with the project id.
+Verified with `git check-ignore`; the key was never staged or committed.
+**Decided by:** Owner supplied the project; Claude wired it.
+
+## 2026-08-28 — No Java on this machine, so no Firestore emulator
+**Decision:** Develop against the real `nexus-6c806` project for the build-a-thon.
+Emulator config stays in `firebase.json` for later.
+**Why:** the Firestore emulator requires a JDK, which is not installed and would be a
+system-wide install outside the project folder. For a demo project with seeded fake
+data the cloud project is an acceptable target, and it is three clicks away.
+**Decided by:** Claude, flagged to the owner.

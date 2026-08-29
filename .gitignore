@@ -1,0 +1,74 @@
+# --- dependencies ---
+node_modules/
+.pnp
+.pnp.js
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+
+# --- build output ---
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- testing / coverage ---
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# --- environment & secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*-service-account*.json
+serviceAccountKey*.json
+firebase-adminsdk*.json
+
+# --- firebase ---
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+database-debug.log*
+pubsub-debug.log*
+firebase-export-*/
+.firebaserc.local
+emulator-data/
+
+# --- vercel ---
+.vercel/
+
+# --- editors / os ---
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.sample.json
+*.swp
+
+# --- logs & caches ---
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.eslintcache
+.turbo/
+.cache/
+
+# --- local scratch ---
+tmp/
+scratch/

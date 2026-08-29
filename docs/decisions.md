@@ -75,3 +75,31 @@ Emulator config stays in `firebase.json` for later.
 system-wide install outside the project folder. For a demo project with seeded fake
 data the cloud project is an acceptable target, and it is three clicks away.
 **Decided by:** Claude, flagged to the owner.
+
+## 2026-08-28 — Ship without Firebase Storage
+**Decision:** No Cloud Storage bucket for now. Profile photos are URLs; the fixture
+generator points at a deterministic placeholder service. The Storage rules and the
+`users/{uid}/photos/{slot}` layout stay written and ready.
+**Why:** new Firebase projects need the Blaze plan to use Storage, and the owner
+cannot upgrade the project right now. Nothing in the demo depends on it — the deck,
+likes, chat, and booking all work on URL-backed photos. Real uploads (BACKLOG E5) are
+the only thing deferred.
+**Cost if upgraded later:** Blaze needs a card on file but has a free monthly tier
+(about 5 GB stored, 1 GB/day downloaded). A demo of this size would sit inside it and
+bill nothing.
+**Decided by:** Owner constraint; Claude adjusted the plan.
+
+## 2026-08-28 — The service account cannot manage project config
+**Decision:** Rules and indexes are not deployed from scripts yet.
+`scripts/deploy-rules.ts` is written and correct but returns
+`PERMISSION_DENIED (IAM_PERMISSION_DENIED)`; index creation returns the same. The
+service account can read and write **data** but cannot manage **configuration**.
+**Two ways out, owner's choice:**
+1. `npx firebase login` once, then `npx firebase deploy --only firestore:rules,firestore:indexes`.
+2. Grant the `firebase-adminsdk-fbsvc@nexus-6c806` service account the *Firebase Rules
+   Admin* and *Cloud Datastore Index Admin* roles, after which `npm run deploy:rules`
+   works headlessly and can run in CI.
+**Consequence until then:** the database is in production mode, so direct client SDK
+reads are denied. Server route handlers use the Admin SDK and are unaffected.
+Queries needing composite indexes are sorted in memory instead.
+**Decided by:** Claude, flagged to the owner.

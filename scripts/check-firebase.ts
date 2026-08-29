@@ -4,7 +4,7 @@
  */
 import { adminAuth, adminDb, adminBucket } from '@/server/firebase/admin';
 
-type Check = { name: string; ok: boolean; detail: string };
+type Check = { name: string; ok: boolean; detail: string; optional?: boolean };
 
 async function run(): Promise<void> {
   const checks: Check[] = [];
@@ -34,17 +34,19 @@ async function run(): Promise<void> {
     checks.push({
       name: 'Storage',
       ok: exists,
-      detail: exists ? 'bucket reachable' : 'bucket missing — Firebase console > Storage > Get started',
+      optional: true,
+      detail: exists ? 'bucket reachable' : 'no bucket (needs the Blaze plan) — photos fall back to URLs',
     });
   } catch (error) {
-    checks.push({ name: 'Storage', ok: false, detail: (error as Error).message });
+    checks.push({ name: 'Storage', ok: false, optional: true, detail: (error as Error).message });
   }
 
   for (const check of checks) {
-    console.log(`${check.ok ? 'ok  ' : 'FAIL'}  ${check.name.padEnd(10)} ${check.detail}`);
+    const mark = check.ok ? 'ok  ' : check.optional ? 'skip' : 'FAIL';
+    console.log(`${mark}  ${check.name.padEnd(10)} ${check.detail}`);
   }
 
-  process.exit(checks.every((c) => c.ok) ? 0 : 1);
+  process.exit(checks.every((c) => c.ok || c.optional) ? 0 : 1);
 }
 
 void run();

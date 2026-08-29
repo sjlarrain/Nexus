@@ -168,7 +168,7 @@ export function rankDeck(
   options: { filters?: DeckFilters; now?: number; seed?: number; bandSize?: number } = {},
 ): RankedCandidate[] {
   const now = options.now ?? Date.now();
-  const bandSize = options.bandSize ?? 10;
+  const bandSize = options.bandSize ?? 4;
   const random = seededRandom(options.seed ?? 1);
 
   const scored = candidates

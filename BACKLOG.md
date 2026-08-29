@@ -51,7 +51,7 @@ The demo lives or dies on the deck feeling full. This gets its own epic.
       demo data, with stable ids for demoing
 - [ ] `E1b.7` Emulator export/import snapshots committed, so a known-good demo state
       is one command away
-- [ ] `E1b.8` Small admin script to inspect and edit any seeded record without the
+- [x] `E1b.8` Small admin script to inspect and edit any seeded record without the
       Firebase console
 
 ## E2 — Auth (onboarding step 0)
@@ -127,7 +127,7 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E8 — Likes
 
-- [ ] `E8.1` `GET /api/likes` — inbound likes, priority first, then recency
+- [x] `E8.1` `GET /api/likes` — inbound likes, priority first, then recency
 - [ ] `E8.2` Yes-back matches instantly and returns the match-moment payload
 - [ ] `E8.3` Pass from the Likes screen removes the inbound like
 

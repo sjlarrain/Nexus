@@ -41,8 +41,7 @@ The demo lives or dies on the deck feeling full. This gets its own epic.
       companies, roles, industries, cities, schools, doors, interests, prompts —
       coherent enough that a card reads like a real person
 - [x] `E1b.2` Placeholder photos for all three slots, deterministic per user
-- [x] `E1b.3` `npm run seed` — targets the emulator by default, the live project
-      behind an explicit `--project` flag and a confirmation
+- [x] `E1b.3` `npm run seed` — writes the population to the configured project
 - [x] `E1b.4` `npm run seed:reset` — wipe and reseed from scratch
 - [x] `E1b.5` Scenario seeds: pending inbound likes for the demo viewer, a live match
       with message history, a match with a cafe named in the thread, a booked coffee —
@@ -127,7 +126,7 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E8 — Likes
 
-- [x] `E8.1` `GET /api/likes` — inbound likes, priority first, then recency
+- [ ] `E8.1` `GET /api/likes` — inbound likes, priority first, then recency
 - [ ] `E8.2` Yes-back matches instantly and returns the match-moment payload
 - [ ] `E8.3` Pass from the Likes screen removes the inbound like
 

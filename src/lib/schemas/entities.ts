@@ -83,7 +83,10 @@ export const bookingSchema = z.object({
   participants: z.tuple([uid, uid]),
   venue: venueSchema,
   /** Proposed options; `chosenSlot` points at the accepted one. */
-  slots: z.array(z.object({ startsAt: millis, durationMin: z.literal(30) })).min(1).max(2),
+  slots: z
+    .array(z.object({ startsAt: millis, durationMin: z.literal(30) }))
+    .min(1)
+    .max(2),
   chosenSlot: millis.nullable(),
   status: z.enum(BOOKING_STATUSES),
   createdBy: uid,
@@ -91,3 +94,4 @@ export const bookingSchema = z.object({
   updatedAt: millis,
 });
 export type Booking = z.infer<typeof bookingSchema>;
+export type BookingStatus = (typeof BOOKING_STATUSES)[number];

@@ -55,3 +55,22 @@ export const LIMITS = {
   interests: 6,
   messageChars: 2000,
 } as const;
+
+/**
+ * Profile prompts (spec section 4 names `p1`/`p2`/`p3` but never says what they ask).
+ *
+ * The seeded population stores free text in them — "The intro I wish someone had made
+ * for me", "Coffee order" — so they behave as three self-authored lines, not answers
+ * to fixed questions. Labels are deliberately neutral until the mocks settle it;
+ * putting a question here that the mocks contradict would mean re-seeding.
+ */
+export const PROMPT_QUESTIONS = {
+  p1: 'Prompt one',
+  p2: 'Prompt two',
+  p3: 'Prompt three',
+} as const;
+
+export const PROMPT_HINT = 'A short line about you. It shows on your card.';
+
+export type PromptKey = keyof typeof PROMPT_QUESTIONS;
+export const PROMPT_KEYS = ['p1', 'p2', 'p3'] as const;

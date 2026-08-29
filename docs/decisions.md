@@ -157,3 +157,40 @@ Firebase JS SDK → `POST /api/auth/session` → httpOnly session cookie → rou
 `scripts/verify-swipe.ts` covers the concurrency invariant separately: 16 checks
 against the real database, including two genuinely simultaneous mutual yes swipes
 producing exactly one match document.
+
+## 2026-08-29 — Reply rate is computed on read, not incremented on write
+
+**Decision.** `stats.replyRate` is recomputed from the messages themselves whenever
+`GET /api/me` is called, and the result is cached back onto the user document.
+
+**Why.** The alternative — incrementing a counter on every message — needs a
+transaction to be safe under two people sending at once, and goes wrong permanently
+if a match is closed or a message is removed. Recomputing is a handful of reads on a
+demo-sized population and is always correct. The cached number stays on the document
+so the deck and the card can read one field without walking every thread.
+
+**Definition** (owner's, recorded earlier): replies ÷ conversations *started with
+you*. Threads you opened yourself, and matches nobody spoke in, are excluded — they
+say nothing about whether you reply. System messages from bookings count as neither
+an opener nor a reply.
+
+## 2026-08-29 — The activity feed is derived, not an events collection
+
+**Decision.** `GET /api/activity` reconstructs events from inbox likes, match
+creation, `lastMessage` and bookings. There is no `events` collection.
+
+**Why.** An events collection would mean every existing write path had to also
+append an event, which is a second thing to get right and a second thing to keep
+consistent. Deriving means the feed cannot drift from the thing it describes, and
+adding it changed no write path at all. If the feed ever needs read state per event,
+that is the point to revisit this.
+
+## 2026-08-29 — Prompt labels stay neutral until the mocks land
+
+**Decision.** `PROMPT_QUESTIONS` labels `p1`/`p2`/`p3` as "Prompt one/two/three".
+
+**Why.** The spec names the three fields but never says what they ask, and the seeded
+population stores free text in them ("The intro I wish someone had made for me",
+"Coffee order"), so they behave as self-authored lines rather than answers to fixed
+questions. Inventing questions now would mean re-seeding when the mocks contradict
+them. **Open for the owner:** are these fixed prompts a user picks from, or free text?

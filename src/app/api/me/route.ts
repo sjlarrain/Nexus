@@ -4,6 +4,8 @@ import { notFound, route } from '@/server/http/respond';
 import { toCard } from '@/lib/cards/card';
 import { profileSchema } from '@/lib/schemas/profile';
 import { gateForStep, statusForStep } from '@/lib/onboarding/gates';
+import { refreshReplyRate } from '@/server/users/stats';
+import { formatReplyRate } from '@/lib/profile/reply-rate';
 import type { UserRecord } from '@/server/users/ensure-user';
 
 export const runtime = 'nodejs';
@@ -21,12 +23,17 @@ export async function GET() {
 
     const profile = profileSchema.parse(data);
 
+    // Recomputed on read so the number on the profile screen is never stale; the
+    // write caches it back for the deck (BACKLOG E11.2).
+    const replyRate = await refreshReplyRate(user.uid);
+
     return {
       uid: user.uid,
       card: toCard(user.uid, profile),
       profile,
       onboarding: data.onboarding,
-      stats: data.stats,
+      stats: { ...data.stats, replyRate: replyRate.rate },
+      replyRate: { ...replyRate, label: formatReplyRate(replyRate) },
       steps: [1, 2, 3, 4, 5].map((step) => ({
         step,
         status: statusForStep(step, profile),

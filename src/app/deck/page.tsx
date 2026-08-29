@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import ActivityStrip from './activity-strip';
 import type { Card } from '@/lib/cards/card';
 
 /**
@@ -24,7 +25,8 @@ export default function DeckPage() {
   const fetchDeck = useCallback(async (): Promise<DeckCard[]> => {
     const response = await fetch('/api/deck');
     const body: unknown = await response.json();
-    if (!response.ok) throw new Error((body as { error?: string }).error ?? 'Could not load the deck.');
+    if (!response.ok)
+      throw new Error((body as { error?: string }).error ?? 'Could not load the deck.');
     return (body as { cards: DeckCard[] }).cards;
   }, []);
 
@@ -58,7 +60,9 @@ export default function DeckPage() {
 
     if (!response.ok) {
       setError((body as { error?: string }).error ?? 'That swipe did not save.');
-      fetchDeck().then(setCards).catch(() => {});
+      fetchDeck()
+        .then(setCards)
+        .catch(() => {});
       return;
     }
 
@@ -68,11 +72,22 @@ export default function DeckPage() {
   }
 
   if (loading) return <main>Loading the deck...</main>;
-  if (error) return <main role="alert">{error} — <a href="/signin">sign in</a></main>;
+  if (error)
+    return (
+      <main role="alert">
+        {error} — <a href="/signin">sign in</a>
+      </main>
+    );
 
   return (
     <main>
       <h1>Deck</h1>
+      <p>
+        <a href="/likes">Likes</a> · <a href="/chat">Conversations</a> ·{' '}
+        <a href="/profile">Your profile</a>
+      </p>
+
+      <ActivityStrip />
 
       {matched ? (
         <p role="status">

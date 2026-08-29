@@ -158,9 +158,11 @@ Covers spec §4 (profile object) and §3 (gating).
 ## E11 — Profile screen and activity
 
 - [x] `E11.1` `GET /api/me` — card preview payload
-- [ ] `E11.2` Reply-rate computation (replies ÷ conversations started with you) and its storage
-- [ ] `E11.3` Editable prompts `p1` / `p2` / `p3`
-- [ ] `E11.4` Activity feed events (liked you, matched, message, booking)
+- [x] `E11.2` Reply-rate computation (replies ÷ conversations started with you),
+      computed on read and cached onto `stats.replyRate`
+- [x] `E11.3` Editable prompts `p1` / `p2` / `p3`
+- [x] `E11.4` Activity feed events (liked you, matched, message, booking) — derived
+      from existing collections, so no write path changed
 
 ## E12 — Security and abuse
 
@@ -187,7 +189,7 @@ Covers spec §4 (profile object) and §3 (gating).
 - [ ] `E14.1` Vercel project, preview deploys per branch, env vars per environment
 - [x] `E14.2` Firestore rules and indexes deployed from CI, not by hand
 - [ ] `E14.3` Error tracking and structured server logs
-- [ ] `E14.4` `README.md`: setup, emulators, seeding, deploy
+- [x] `E14.4` `README.md`: setup, seeding, tests, deploy
 - [ ] `E14.5` Smoke tests against a preview deploy
 
 ## E15 — UI 🎨 (blocked on HTML mocks)

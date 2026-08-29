@@ -147,3 +147,13 @@ client-side create would leave that summary stale and the match list wrong.
 Clients still read the thread live via `onSnapshot`, so incoming messages are instant;
 only the send is server-mediated.
 **Decided by:** Claude.
+
+## 2026-08-29 — Verified end to end in a browser
+Signed in as the seeded Jordan Reyes at `/signin`, landed on `/deck` with live data,
+and swiped. The swipe reached Firestore as `demo-jordan__demo-028`. Chain confirmed:
+Firebase JS SDK → `POST /api/auth/session` → httpOnly session cookie → route handler
+→ Firestore transaction. Demo data was reseeded afterwards to clear the test swipe.
+
+`scripts/verify-swipe.ts` covers the concurrency invariant separately: 16 checks
+against the real database, including two genuinely simultaneous mutual yes swipes
+producing exactly one match document.

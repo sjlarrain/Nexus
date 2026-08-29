@@ -37,17 +37,17 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · 🔒 blocked on the own
 
 The demo lives or dies on the deck feeling full. This gets its own epic.
 
-- [ ] `E1b.1` Fixture generator: N realistic US professionals — names, headlines,
+- [x] `E1b.1` Fixture generator: N realistic US professionals — names, headlines,
       companies, roles, industries, cities, schools, doors, interests, prompts —
       coherent enough that a card reads like a real person
-- [ ] `E1b.2` Placeholder photos for all three slots, deterministic per user
-- [ ] `E1b.3` `npm run seed` — targets the emulator by default, the live project
+- [x] `E1b.2` Placeholder photos for all three slots, deterministic per user
+- [x] `E1b.3` `npm run seed` — targets the emulator by default, the live project
       behind an explicit `--project` flag and a confirmation
-- [ ] `E1b.4` `npm run seed:reset` — wipe and reseed from scratch
-- [ ] `E1b.5` Scenario seeds: pending inbound likes for the demo viewer, a live match
+- [x] `E1b.4` `npm run seed:reset` — wipe and reseed from scratch
+- [x] `E1b.5` Scenario seeds: pending inbound likes for the demo viewer, a live match
       with message history, a match with a cafe named in the thread, a booked coffee —
       one per screen in spec §1, so every screen has something to show
-- [ ] `E1b.6` Demo viewer (Jordan Reyes) and counterpart (Daniel Okafor) per spec
+- [x] `E1b.6` Demo viewer (Jordan Reyes) and counterpart (Daniel Okafor) per spec
       demo data, with stable ids for demoing
 - [ ] `E1b.7` Emulator export/import snapshots committed, so a known-good demo state
       is one command away
@@ -84,13 +84,13 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E4 — Reference data
 
-- [ ] `E4.1` US states to cities dataset; city stored as `"City, ST"`; changing state
+- [x] `E4.1` US states to cities dataset; city stored as `"City, ST"`; changing state
       clears city (spec §2 step 1)
-- [ ] `E4.2` Industries, functions/lanes, years bands, course types (Undergraduate,
+- [x] `E4.2` Industries, functions/lanes, years bands, course types (Undergraduate,
       MBA, MSBA, MS, PhD, Other)
-- [ ] `E4.3` `openTo` options (Referrals, Mock interviews, Resume review, Career
+- [x] `E4.3` `openTo` options (Referrals, Mock interviews, Resume review, Career
       advice, Industry intel, Cofounder chat) and the interests taxonomy
-- [ ] `E4.4` Company peer map (Figma to Notion, Canva, Adobe, Linear, Airtable, plus a
+- [x] `E4.4` Company peer map (Figma to Notion, Canva, Adobe, Linear, Airtable, plus a
       fallback list) powering door suggestions and target-company suggestions
 - [ ] `E4.5` `GET /api/refdata` with long cache headers; user-added companies merge
       into the same list so they render as already-selected (spec §6)
@@ -110,7 +110,7 @@ Covers spec §4 (profile object) and §3 (gating).
 - [ ] `E6.1` `GET /api/deck` — exclusion set (self, already swiped, matched, blocked)
 - [ ] `E6.2` Filters: industry, role, location, direction — server-side, paginated
 - [ ] `E6.3` v1 ranking per `docs/architecture.md` §5, unit-tested and explainable
-- [ ] `E6.4` Card payload shape: only the fields the card renders; role line composed
+- [x] `E6.4` Card payload shape: only the fields the card renders; role line composed
       by filtering empty parts before joining with " · " (spec §6)
 - [ ] `E6.5` Prefetch + cursor so the deck never blocks on a swipe
 

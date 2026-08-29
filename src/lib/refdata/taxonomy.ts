@@ -1,0 +1,148 @@
+/**
+ * Industries, functions, and interests — the option sets behind the multi-select
+ * grids in onboarding steps 2, 3, and 4.
+ *
+ * Kept as plain arrays rather than Firestore documents: the schemas validate against
+ * them, so changing one is a code change with a test behind it.
+ */
+
+export const INDUSTRIES = [
+  'Software',
+  'Fintech',
+  'Healthcare',
+  'Biotech',
+  'E-commerce',
+  'Marketplaces',
+  'Consumer',
+  'Enterprise SaaS',
+  'AI / ML',
+  'Cybersecurity',
+  'Media & Entertainment',
+  'Gaming',
+  'Education',
+  'Climate & Energy',
+  'Real Estate',
+  'Logistics & Supply Chain',
+  'Consulting',
+  'Investment Banking',
+  'Private Equity',
+  'Venture Capital',
+  'Retail',
+  'Travel & Hospitality',
+  'Automotive',
+  'Aerospace & Defense',
+  'Telecom',
+  'Government & Public Sector',
+  'Nonprofit',
+  'Legal',
+  'Manufacturing',
+  'Agriculture',
+] as const;
+export type Industry = (typeof INDUSTRIES)[number];
+
+/** "Function" in the UI, `lane` in the spec's data model. */
+export const FUNCTIONS = [
+  'Product Management',
+  'Product Design',
+  'Software Engineering',
+  'Data Science',
+  'Data Engineering',
+  'Machine Learning',
+  'Marketing',
+  'Growth',
+  'Sales',
+  'Business Development',
+  'Customer Success',
+  'Operations',
+  'Strategy',
+  'Finance',
+  'Accounting',
+  'People & Recruiting',
+  'Legal & Compliance',
+  'Consulting',
+  'Research',
+  'Program Management',
+  'Supply Chain',
+  'Communications',
+] as const;
+export type FunctionName = (typeof FUNCTIONS)[number];
+
+/** Spec section 2, step 4: "What you are into", max 6. */
+export const INTERESTS = [
+  'Running',
+  'Climbing',
+  'Cycling',
+  'Yoga',
+  'Weightlifting',
+  'Hiking',
+  'Surfing',
+  'Skiing',
+  'Soccer',
+  'Basketball',
+  'Tennis',
+  'Golf',
+  'Cooking',
+  'Baking',
+  'Coffee',
+  'Natural wine',
+  'Live music',
+  'Concerts',
+  'Vinyl',
+  'Photography',
+  'Film',
+  'Theater',
+  'Reading',
+  'Writing',
+  'Podcasts',
+  'Board games',
+  'Video games',
+  'Chess',
+  'Travel',
+  'Languages',
+  'Volunteering',
+  'Dogs',
+  'Cats',
+  'Gardening',
+  'Woodworking',
+  'Pottery',
+  'Painting',
+  'Standup comedy',
+  'Investing',
+  'Side projects',
+] as const;
+export type Interest = (typeof INTERESTS)[number];
+
+/** Titles used to build believable fixture people, grouped by function. */
+export const TITLES_BY_FUNCTION: Partial<Record<FunctionName, readonly string[]>> = {
+  'Product Management': [
+    'Associate Product Manager',
+    'Product Manager',
+    'Senior Product Manager',
+    'Group Product Manager',
+    'Director of Product',
+  ],
+  'Product Design': [
+    'Product Designer',
+    'Senior Product Designer',
+    'Staff Product Designer',
+    'Design Lead',
+    'Head of Design',
+  ],
+  'Software Engineering': [
+    'Software Engineer',
+    'Senior Software Engineer',
+    'Staff Engineer',
+    'Engineering Manager',
+    'Principal Engineer',
+  ],
+  'Data Science': ['Data Analyst', 'Data Scientist', 'Senior Data Scientist', 'Analytics Lead'],
+  'Machine Learning': ['ML Engineer', 'Senior ML Engineer', 'Research Engineer'],
+  Marketing: ['Marketing Manager', 'Senior Marketing Manager', 'Brand Lead', 'Head of Marketing'],
+  Growth: ['Growth Manager', 'Growth Lead', 'Head of Growth'],
+  Sales: ['Account Executive', 'Senior Account Executive', 'Enterprise AE', 'Sales Manager'],
+  Operations: ['Operations Associate', 'Operations Manager', 'Senior Operations Manager'],
+  Strategy: ['Strategy Associate', 'Strategy Manager', 'Chief of Staff'],
+  Finance: ['Financial Analyst', 'Senior Financial Analyst', 'Finance Manager'],
+  Consulting: ['Business Analyst', 'Consultant', 'Engagement Manager'],
+  'People & Recruiting': ['Recruiter', 'Technical Recruiter', 'People Operations Manager'],
+};

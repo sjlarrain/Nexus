@@ -108,8 +108,8 @@ Covers spec §4 (profile object) and §3 (gating).
 ## E6 — Deck and candidate feed
 
 - [ ] `E6.1` `GET /api/deck` — exclusion set (self, already swiped, matched, blocked)
-- [ ] `E6.2` Filters: industry, role, location, direction — server-side, paginated
-- [ ] `E6.3` v1 ranking per `docs/architecture.md` §5, unit-tested and explainable
+- [x] `E6.2` Filters: industry, role, location, direction — server-side, paginated
+- [x] `E6.3` v1 ranking per `docs/architecture.md` §5, unit-tested and explainable
 - [x] `E6.4` Card payload shape: only the fields the card renders; role line composed
       by filtering empty parts before joining with " · " (spec §6)
 - [ ] `E6.5` Prefetch + cursor so the deck never blocks on a swipe

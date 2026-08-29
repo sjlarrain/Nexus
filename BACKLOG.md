@@ -194,12 +194,14 @@ Covers spec §4 (profile object) and §3 (gating).
 - [x] `E14.4` `README.md`: setup, seeding, tests, deploy
 - [ ] `E14.5` Smoke tests against a preview deploy
 
-## E15 — UI 🎨 (blocked on HTML mocks)
+## E15 — UI 🎨
 
-Nothing here starts until the mocks land in `docs/mocks/`.
+Mocks landed 2026-08-29 in `docs/mocks/planup-designs.html`. See `docs/design.md`
+for the token extraction, the divergences from spec §5, and the list of things the
+mock shows that the backend cannot yet supply.
 
-- [ ] `E15.1` Extract design tokens from the mocks (spec §5: ink `#17150f`, accent
-      `#a2542a`, wash `#f6f4f0`, success `#2f7d5e`; Plus Jakarta Sans + IBM Plex Mono)
+- [x] `E15.1` Design tokens extracted to `src/app/tokens.css` + `globals.css`;
+      fonts self-hosted via `next/font`. Mock overrides spec §5 on palette and type
 - [ ] `E15.2` Primitives: card, multi-select grid, input, primary button (disabled is
       ink at 28% with the validation message as the label), 44px touch targets
 - [ ] `E15.3` Onboarding steps 0-5 wired to E3

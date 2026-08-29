@@ -1,0 +1,82 @@
+/* ============================================================
+   DESIGN TOKENS — extracted from docs/mocks/planup-designs.html
+   (BACKLOG E15.1)
+
+   These values are copied from the mock, not invented. When the mock and
+   docs/planup.md section 5 disagree, the mock wins: CLAUDE.md section 2 says the
+   HTML mocks define the visual language. The divergences are listed at the bottom
+   of this file and in docs/design.md, because the spec is still the source of truth
+   for behaviour and someone reading it will notice the colours do not match.
+
+   Nothing outside this file should contain a raw hex value.
+   ============================================================ */
+
+:root {
+  /* --- surface ------------------------------------------------------- */
+  --board: #eae8e3; /* the page behind the app */
+  --paper: #ffffff; /* cards, sheets, inputs on dark */
+  --paper-2: #faf9f6; /* app background, pressed states */
+  --ink-card: #121110; /* dark sheet (match moment) */
+
+  /* --- text ---------------------------------------------------------- */
+  --ink: #14120f;
+  --ink-2: #57524a; /* secondary copy, role lines */
+  --ink-3: #8c867c; /* captions, meta, placeholder */
+  --ink-inv: #ffffff;
+  --ink-inv-2: #b9b4ac; /* secondary copy on dark */
+
+  /* --- line ---------------------------------------------------------- */
+  --line: #e5e1d9;
+  --line-2: #d6d1c7;
+  --line-dark: #2a2825;
+
+  /* --- accent -------------------------------------------------------- */
+  --amber: #e9b23c; /* priority ask, activity dot */
+  --amber-soft: #f5e4b6; /* "2 mutual" chip */
+  --amber-ink: #5f4a16; /* text on amber-soft */
+  --green-bg: #e9f0e9; /* the offer half of a split card */
+  --green-ink: #3f6b4a;
+  --peach-bg: #fbeee1; /* the ask half of a split card */
+  --peach-ink: #8a5a2b;
+
+  /* --- photo placeholders -------------------------------------------- */
+  /* The mock hatches empty photo slots rather than showing grey boxes. Kept
+     because seeded fixtures point at external URLs that can fail to load. */
+  --hatch: #d8d1c3;
+  --hatch-warm: #e3d7bb;
+
+  /* --- type ---------------------------------------------------------- */
+  /* The families come from next/font in layout.tsx, which self-hosts them — the
+     mock loads them from Google Fonts, which a PWA should not depend on. */
+  --display: var(--font-display), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --body: var(--font-body), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* --- shape --------------------------------------------------------- */
+  --r-frame: 20px;
+  --r-card: 16px;
+  --r-box: 10px;
+  --r-pill: 999px;
+
+  --shadow-card: 0 1px 2px rgba(20, 18, 15, 0.04), 0 8px 24px rgba(20, 18, 15, 0.06);
+
+  /* --- rules from docs/planup.md section 5 the mock does not show ----- */
+  /* "Disabled state is ink at 28% opacity and the label becomes the
+     validation message." The gates already return that label (E3.2). */
+  --disabled-opacity: 0.28;
+  /* "Minimum touch target: 44px." */
+  --touch-min: 44px;
+}
+
+/* ------------------------------------------------------------------
+   Divergences from docs/planup.md section 5, resolved in favour of the mock:
+
+     type      spec: Plus Jakarta Sans      mock: Inter Tight + Inter
+     ink       spec: #17150f                mock: #14120f
+     accent    spec: #a2542a (terracotta)   mock: #e9b23c (amber)
+     wash      spec: #f6f4f0                mock: #faf9f6 / #eae8e3
+     success   spec: #2f7d5e                mock: #3f6b4a
+
+   Agreeing: IBM Plex Mono for counters and kickers, 16px card radius, ink-filled
+   primary button with white text, 44px touch targets.
+   ------------------------------------------------------------------ */

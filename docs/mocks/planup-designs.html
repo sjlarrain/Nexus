@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PlanUp — referral matching, first pass (US market)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   PLANUP — DESIGN TOKENS
+   Every frame below is built only from these values.
+   ============================================================ */
+:root{
+  /* surface */
+  --board:      #EAE8E3;
+  --paper:      #FFFFFF;
+  --paper-2:    #FAF9F6;
+  --ink-card:   #121110;
+
+  /* text */
+  --ink:        #14120F;
+  --ink-2:      #57524A;
+  --ink-3:      #8C867C;
+  --ink-inv:    #FFFFFF;
+  --ink-inv-2:  #B9B4AC;
+
+  /* line */
+  --line:       #E5E1D9;
+  --line-2:     #D6D1C7;
+  --line-dark:  #2A2825;
+
+  /* accent */
+  --amber:      #E9B23C;
+  --amber-soft: #F5E4B6;
+  --green-bg:   #E9F0E9;
+  --green-ink:  #3F6B4A;
+  --peach-bg:   #FBEEE1;
+  --peach-ink:  #8A5A2B;
+
+  /* photo placeholders */
+  --hatch:      #D8D1C3;
+  --hatch-warm: #E3D7BB;
+
+  /* type */
+  --display: "Inter Tight", "Söhne", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono:    "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* shape */
+  --r-frame: 20px;
+  --r-card:  16px;
+  --r-box:   10px;
+  --r-pill:  999px;
+
+  --shadow-card: 0 1px 2px rgba(20,18,15,.04), 0 8px 24px rgba(20,18,15,.06);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--board);
+  font-family:var(--body);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:4px}
+
+/* ---------- board chrome ---------- */
+.board{padding:28px 24px 64px}
+.board__title{display:flex;align-items:center;gap:10px;margin:0 0 26px}
+.board__num{
+  display:grid;place-items:center;width:22px;height:22px;border-radius:6px;
+  background:var(--ink);color:var(--ink-inv);font-family:var(--mono);font-size:11px;
+}
+.board__title h1{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0}
+
+.rail{display:flex;gap:34px;align-items:flex-start;overflow-x:auto;padding-bottom:24px;scrollbar-width:thin}
+.frame{flex:0 0 auto}
+.frame__label{display:flex;align-items:flex-start;gap:8px;margin-bottom:14px;max-width:300px}
+.frame__tag{
+  flex:0 0 auto;background:#DEDBD4;border-radius:5px;padding:2px 6px;
+  font-family:var(--mono);font-size:10px;color:var(--ink-2);letter-spacing:.02em;
+}
+.frame__caption{font-size:11.5px;line-height:1.45;color:var(--ink-3)}
+.frame__aside{font-size:11.5px;line-height:1.45;color:var(--ink-3);font-style:italic;max-width:110px}
+
+/* ---------- shared atoms ---------- */
+.hatch{
+  background-color:var(--hatch);
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.5) 0 5px,transparent 5px 11px);
+}
+.hatch--warm{
+  background-color:var(--hatch-warm);
+  background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.5) 0 5px,transparent 5px 11px);
+}
+.eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}
+.meta{font-family:var(--mono);font-size:10px;color:var(--ink-3)}
+.chip{
+  display:inline-flex;align-items:center;border:1px solid var(--line-2);border-radius:7px;
+  padding:4px 9px;font-size:11.5px;color:var(--ink-2);background:var(--paper);
+}
+.chip--amber{background:var(--amber-soft);border-color:transparent;color:#5F4A16;font-weight:500}
+.badge{
+  display:inline-flex;align-items:center;background:var(--paper);border-radius:var(--r-pill);
+  padding:5px 10px;font-size:11px;font-weight:500;letter-spacing:.01em;
+}
+.dots{display:flex;gap:3px}
+.dots span{width:16px;height:2.5px;border-radius:2px;background:rgba(255,255,255,.45)}
+.dots span.is-on{background:#fff}
+.dots--dark span{background:rgba(20,18,15,.18)}
+.dots--dark span.is-on{background:var(--ink)}
+.quote{font-size:13.5px;line-height:1.5;color:var(--ink);margin:0}
+
+/* ============================================================
+   1a — WORKING PROTOTYPE (phone shell)
+   ============================================================ */
+.phone{
+  width:382px;background:var(--paper-2);border-radius:32px;padding:0 0 8px;
+  box-shadow:var(--shadow-card);overflow:hidden;
+}
+.status{display:flex;align-items:center;justify-content:space-between;padding:14px 22px 4px;position:relative}
+.status__time{font-family:var(--display);font-size:15px;font-weight:600}
+.status__notch{position:absolute;left:50%;transform:translateX(-50%);top:10px;width:112px;height:30px;border-radius:var(--r-pill);background:var(--ink)}
+.status__icons{display:flex;align-items:center;gap:5px}
+
+.appbar{display:flex;align-items:center;justify-content:space-between;padding:12px 20px 10px}
+.brand{display:flex;align-items:baseline;gap:6px}
+.brand__name{font-family:var(--display);font-size:23px;font-weight:700;letter-spacing:-.03em}
+.brand__beta{font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--ink-3)}
+.appbar__actions{display:flex;gap:7px}
+.pill-btn{
+  border:1px solid var(--line-2);background:var(--paper);border-radius:var(--r-pill);
+  padding:6px 13px;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;
+}
+.pill-btn .dot{width:5px;height:5px;border-radius:50%;background:var(--amber)}
+
+.filters{display:flex;gap:7px;padding:2px 20px 14px;flex-wrap:wrap}
+.filters .chip{border-radius:var(--r-pill);padding:5px 12px;font-size:12px}
+
+.deck{position:relative;margin:0 18px;height:600px}
+.swipecard{
+  position:absolute;inset:0;background:var(--paper);border-radius:var(--r-card);
+  box-shadow:var(--shadow-card);overflow:hidden;display:flex;flex-direction:column;
+  transition:transform .32s cubic-bezier(.2,.7,.3,1), opacity .32s ease;
+}
+.swipecard.is-gone-left{transform:translateX(-120%) rotate(-9deg);opacity:0}
+.swipecard.is-gone-right{transform:translateX(120%) rotate(9deg);opacity:0}
+.swipecard.is-gone-up{transform:translateY(-120%);opacity:0}
+.swipecard__photo{position:relative;height:300px;flex:0 0 auto;cursor:pointer}
+.swipecard__photo .badge{position:absolute;top:12px;left:12px}
+.swipecard__photo .chip--amber{position:absolute;top:12px;right:12px;border-radius:var(--r-pill);padding:5px 10px}
+.swipecard__photo .meta{position:absolute;left:14px;bottom:12px;color:var(--ink-2)}
+.swipecard__photo .dots{position:absolute;right:14px;bottom:14px}
+.swipecard__body{padding:18px 18px 20px;display:flex;flex-direction:column;gap:12px}
+.name-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.name{font-family:var(--display);font-size:25px;font-weight:600;letter-spacing:-.025em;margin:0}
+.role{font-size:13.5px;color:var(--ink-2);margin:-6px 0 0}
+.refbox{border:1px solid var(--line);border-radius:var(--r-box);padding:10px 12px}
+.refbox p{margin:4px 0 0;font-size:13.5px;font-weight:500}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+
+.actions{display:flex;align-items:center;justify-content:center;gap:16px;padding:20px 0 12px}
+.act{
+  display:grid;place-items:center;border-radius:50%;transition:transform .12s ease;
+}
+.act:active{transform:scale(.94)}
+.act--pass{width:56px;height:56px;background:var(--paper);border:1px solid var(--line-2);font-size:12.5px;color:var(--ink-2)}
+.act--boost{width:48px;height:48px;background:var(--amber);color:var(--ink);font-size:18px}
+.act--yes{width:56px;height:56px;background:var(--ink);color:var(--ink-inv);font-size:13.5px;font-weight:500}
+
+.tabbar{display:flex;justify-content:space-between;padding:10px 34px 6px;border-top:1px solid var(--line)}
+.tab{font-size:12.5px;color:var(--ink-3);padding-bottom:6px;position:relative}
+.tab.is-on{color:var(--ink);font-weight:500}
+.tab.is-on::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--ink);border-radius:2px}
+.homebar{width:132px;height:4px;border-radius:2px;background:var(--line-2);margin:8px auto 4px}
+
+/* ============================================================
+   1b — SPLIT CARD (offer vs ask)
+   ============================================================ */
+.card-split{width:340px;background:var(--paper);border-radius:var(--r-card);box-shadow:var(--shadow-card);overflow:hidden}
+.card-split__photos{height:118px;display:grid;grid-template-columns:1.85fr 1fr;position:relative}
+.card-split__photos .meta{position:absolute;right:12px;bottom:8px}
+.card-split__body{padding:18px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.split__box{border-radius:var(--r-box);padding:11px 12px}
+.split__box--offer{background:var(--green-bg)}
+.split__box--ask{background:var(--peach-bg)}
+.split__box .eyebrow{opacity:.85}
+.split__box--offer .eyebrow{color:var(--green-ink)}
+.split__box--ask .eyebrow{color:var(--peach-ink)}
+.split__box strong{display:block;margin-top:6px;font-size:14.5px;font-weight:600;letter-spacing:-.01em;line-height:1.25}
+.split__box em{display:block;margin-top:8px;font-style:normal;font-size:12.5px;line-height:1.35}
+.split__box--offer em{color:var(--green-ink)}
+.split__box--ask em{color:var(--peach-ink)}
+.card-split__foot{display:flex;justify-content:space-between;margin-top:14px}
+.badge--both{background:var(--ink);color:var(--ink-inv);font-family:var(--mono);font-size:9px;letter-spacing:.1em;padding:4px 8px;border-radius:5px}
+
+/* ============================================================
+   1c — FULL-BLEED EDITORIAL CARD
+   ============================================================ */
+.card-bleed{
+  width:340px;height:500px;border-radius:22px;overflow:hidden;position:relative;
+  display:flex;flex-direction:column;justify-content:flex-end;box-shadow:var(--shadow-card);
+}
+.card-bleed__scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(18,17,16,0) 28%,rgba(18,17,16,.72) 58%,#121110 88%)}
+.card-bleed .badge{position:absolute;top:14px;left:14px;z-index:2}
+.card-bleed .dots{position:absolute;top:20px;right:16px;z-index:2}
+.card-bleed .meta{position:absolute;top:calc(50% - 8px);left:0;right:0;text-align:center;color:rgba(255,255,255,.72);z-index:2}
+.card-bleed__body{position:relative;z-index:2;padding:20px;color:var(--ink-inv);display:flex;flex-direction:column;gap:11px}
+.card-bleed__name{font-family:var(--display);font-size:32px;font-weight:600;letter-spacing:-.03em;margin:0;line-height:1}
+.card-bleed__meta{font-size:13px;color:var(--ink-inv-2);margin:0;line-height:1.35}
+.card-bleed .quote{color:#fff;font-size:13.5px}
+.card-bleed .chip{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.28);color:#fff}
+.card-bleed .chip--amber{background:var(--amber-soft);color:#5F4A16;border-color:transparent}
+
+/* ============================================================
+   1d — MATCH MOMENT, COFFEE-FIRST (booking)
+   ============================================================ */
+.sheet-dark{
+  width:340px;background:var(--ink-card);color:var(--ink-inv);border-radius:22px;
+  padding:22px 20px 24px;box-shadow:var(--shadow-card);
+}
+.sheet-dark .eyebrow{color:#9A948A}
+.sheet-dark h2{font-family:var(--display);font-size:34px;font-weight:600;letter-spacing:-.035em;line-height:1.04;margin:14px 0 0}
+.sheet-dark p{font-size:14px;line-height:1.45;color:var(--ink-inv-2);margin:14px 0 18px}
+.slots{display:flex;flex-direction:column;gap:9px}
+.slot{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  background:#1E1C1A;border:1px solid transparent;border-radius:12px;padding:13px 15px;text-align:left;
+  transition:border-color .15s ease, background .15s ease;
+}
+.slot:hover{background:#26241F}
+.slot.is-on{border-color:#fff;background:#26241F}
+.slot__time{font-size:14.5px;font-weight:500}
+.slot__note{font-family:var(--mono);font-size:10px;color:#8B857C}
+.btn-light{
+  display:block;width:100%;background:var(--paper);color:var(--ink);border-radius:var(--r-pill);
+  padding:15px;font-size:14.5px;font-weight:500;text-align:center;margin-top:18px;
+}
+.btn-ghost-dark{display:block;width:100%;text-align:center;margin-top:14px;font-size:13.5px;color:var(--ink-inv-2)}
+
+/* ============================================================
+   1e — MATCH MOMENT, MESSAGE-FIRST
+   ============================================================ */
+.sheet-light{
+  width:340px;background:var(--paper);border-radius:22px;padding:22px 20px 24px;
+  box-shadow:var(--shadow-card);text-align:center;
+}
+.sheet-light .eyebrow{display:block;margin-bottom:16px}
+.avatars{display:flex;justify-content:center;gap:12px;margin-bottom:18px}
+.avatars div{width:78px;height:82px;border-radius:12px}
+.sheet-light h2{font-family:var(--display);font-size:29px;font-weight:600;letter-spacing:-.03em;line-height:1.1;margin:0 0 12px}
+.sheet-light .sub{font-size:13.5px;line-height:1.5;color:var(--ink-2);margin:0 0 18px}
+.opener{
+  display:block;width:100%;text-align:left;background:var(--paper-2);border:1px solid var(--line);
+  border-radius:14px;padding:13px 15px;font-size:13.5px;line-height:1.45;margin-bottom:10px;
+  transition:border-color .15s ease;
+}
+.opener:hover,.opener.is-on{border-color:var(--ink)}
+.btn-dark{
+  display:block;width:100%;background:var(--ink);color:var(--ink-inv);border-radius:12px;
+  padding:15px;font-size:14.5px;font-weight:500;text-align:center;margin-top:8px;
+}
+.btn-ghost{display:block;width:100%;text-align:center;margin-top:14px;font-size:13.5px;color:var(--ink-2)}
+
+/* ============================================================
+   1f — ONBOARDING CHECKLIST
+   ============================================================ */
+.checklist{width:340px;background:var(--paper);border-radius:22px;padding:24px 20px;box-shadow:var(--shadow-card)}
+.checklist h2{font-family:var(--display);font-size:29px;font-weight:600;letter-spacing:-.03em;line-height:1.1;margin:0 0 10px}
+.checklist .sub{font-size:14px;line-height:1.45;color:var(--ink-2);margin:0 0 20px}
+.progress{height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.progress i{display:block;height:100%;background:var(--ink);border-radius:2px;transition:width .3s ease}
+.progress-label{margin:8px 0 16px}
+.row{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:9px;text-align:left;
+}
+.row__label{font-size:14.5px}
+.row__state{font-size:13px;color:var(--ink-3)}
+.row__state--done{color:var(--ink);font-weight:500}
+.row--active{border:1.5px solid var(--ink);padding:16px;border-radius:14px}
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field__label{font-size:13.5px;color:var(--ink-3);margin:0 0 9px}
+.field__chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip--solid{background:var(--ink);color:var(--ink-inv);border-color:transparent;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:500}
+.chip--add{border-style:solid;color:var(--ink-2);border-radius:8px;padding:7px 11px;font-size:12.5px;background:var(--paper)}
+.field__input{
+  background:#EFEDE8;border-radius:10px;padding:12px 13px;font-size:13.5px;line-height:1.4;color:var(--ink-2);
+}
+
+/* ============================================================
+   1g — ONBOARDING, ONE QUESTION PER SCREEN
+   ============================================================ */
+.question{width:340px;background:var(--paper);border-radius:22px;padding:24px 20px 22px;box-shadow:var(--shadow-card)}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px}
+.steps span{height:3px;border-radius:2px;background:var(--line-2)}
+.steps span.is-on{background:var(--ink)}
+.question h2{font-family:var(--display);font-size:31px;font-weight:600;letter-spacing:-.035em;line-height:1.06;margin:12px 0 10px}
+.question .sub{font-size:14px;line-height:1.45;color:var(--ink-3);margin:0 0 20px}
+.option{
+  display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:14px;
+  padding:15px 16px;margin-bottom:10px;background:var(--paper);transition:border-color .15s ease,background .15s ease;
+}
+.option:hover{border-color:var(--line-dark)}
+.option.is-on{border:1.5px solid var(--ink);background:var(--paper-2)}
+.option strong{display:block;font-size:15.5px;font-weight:500;letter-spacing:-.01em;margin-bottom:4px}
+.option span{display:block;font-size:13.5px;line-height:1.4;color:var(--ink-3)}
+.nav{display:flex;gap:10px;margin-top:16px}
+.nav .back{flex:0 0 auto;border:1px solid var(--line);border-radius:12px;padding:15px 24px;font-size:14.5px}
+.nav .next{flex:1;background:var(--ink);color:var(--ink-inv);border-radius:12px;padding:15px;font-size:14.5px;font-weight:500;text-align:center}
+
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+@media (max-width:900px){
+  .board{padding:20px 16px 48px}
+  .rail{flex-direction:column;gap:34px;overflow:visible}
+  .phone,.card-split,.card-bleed,.sheet-dark,.sheet-light,.checklist,.question{width:100%;max-width:382px}
+}
+</style>
+</head>
+<body>
+<main class="board">
+
+  <div class="board__title">
+    <span class="board__num">1</span>
+    <h1>PlanUp — referral matching, first pass (US market)</h1>
+  </div>
+
+  <div class="rail">
+
+    <!-- ========== 1a ========== -->
+    <section class="frame">
+      <div class="frame__label">
+        <span class="frame__tag">1a</span>
+        <p class="frame__caption">Working prototype — drag the card: right = interested, left = pass, up = priority ask. Tabs, Likes, match, chat, booking all live.</p>
+      </div>
+
+      <div class="phone">
+        <div class="status">
+          <span class="status__time">9:41</span>
+          <span class="status__notch"></span>
+          <span class="status__icons">
+            <svg width="17" height="11" viewBox="0 0 17 11" fill="none" aria-hidden="true">
+              <rect x="0" y="7" width="3" height="4" rx="1" fill="#14120F"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#14120F"/>
+              <rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#14120F"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#14120F"/>
+            </svg>
+            <svg width="15" height="11" viewBox="0 0 15 11" fill="none" aria-hidden="true">
+              <path d="M7.5 9.6 9.8 7.2a3.4 3.4 0 0 0-4.6 0L7.5 9.6Z" fill="#14120F"/>
+              <path d="M2.6 4.4a7.3 7.3 0 0 1 9.8 0" stroke="#14120F" stroke-width="1.5" stroke-linecap="round"/>
+              <path d="M4.8 6.6a4.2 4.2 0 0 1 5.4 0" stroke="#14120F" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <svg width="24" height="11" viewBox="0 0 24 11" fill="none" aria-hidden="true">
+              <rect x=".5" y=".5" width="20" height="10" rx="3" stroke="#14120F" stroke-opacity=".4"/>
+              <rect x="2" y="2" width="17" height="7" rx="2" fill="#14120F"/>
+              <path d="M22 4v3a2 2 0 0 0 0-3Z" fill="#14120F" fill-opacity=".4"/>
+            </svg>
+          </span>
+        </div>
+
+        <div class="appbar">
+          <span class="brand"><span class="brand__name">PlanUp</span><span class="brand__beta">BETA</span></span>
+          <span class="appbar__actions">
+            <button class="pill-btn">Activity <i class="dot"></i></button>
+            <button class="pill-btn">Filters</button>
+          </span>
+        </div>
+
+        <div class="filters">
+          <span class="chip">Product</span>
+          <span class="chip">Fintech</span>
+          <span class="chip">New York, NY</span>
+          <span class="chip">Any school</span>
+        </div>
+
+        <div class="deck" id="deck">
+          <!-- card 2 (underneath) -->
+          <article class="swipecard" data-card="2">
+            <div class="swipecard__photo hatch--warm" data-photos>
+              <span class="badge">Can refer</span>
+              <span class="chip chip--amber">4 mutual</span>
+              <span class="meta">photo 1 / 3</span>
+              <span class="dots dots--dark"><span class="is-on"></span><span></span><span></span></span>
+            </div>
+            <div class="swipecard__body">
+              <div class="name-row">
+                <h2 class="name">Marcus Bell</h2>
+                <span class="meta">Seattle, WA</span>
+              </div>
+              <p class="role">Staff Engineer · Stripe · 9 yrs</p>
+              <div class="refbox">
+                <span class="eyebrow">Can refer into</span>
+                <p>Stripe · Payments, Infra</p>
+              </div>
+              <p class="quote">“Happy to walk anyone through the Stripe loop. I’m also feeling out my first EM role.”</p>
+              <div class="tags">
+                <span class="chip">Payments</span><span class="chip">Infra</span><span class="chip">Georgia Tech</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- card 1 (top) -->
+          <article class="swipecard" data-card="1">
+            <div class="swipecard__photo hatch" data-photos>
+              <span class="badge">Can refer</span>
+              <span class="chip chip--amber">2 mutual</span>
+              <span class="meta">photo 1 / 3</span>
+              <span class="dots dots--dark"><span class="is-on"></span><span></span><span></span></span>
+            </div>
+            <div class="swipecard__body">
+              <div class="name-row">
+                <h2 class="name">Daniel Okafor</h2>
+                <span class="meta">New York, NY</span>
+              </div>
+              <p class="role">Senior PM · DoorDash · 6 yrs</p>
+              <div class="refbox">
+                <span class="eyebrow">Can refer into</span>
+                <p>DoorDash · Growth, Marketplace</p>
+              </div>
+              <p class="quote">“I’ve referred four people into DoorDash growth. Ask me anything about the PM loop.”</p>
+              <div class="tags">
+                <span class="chip">Growth</span><span class="chip">Marketplace</span><span class="chip">0→1</span><span class="chip">Michigan</span>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="actions">
+          <button class="act act--pass" data-swipe="left">Pass</button>
+          <button class="act act--boost" data-swipe="up" aria-label="Priority ask">↑</button>
+          <button class="act act--yes" data-swipe="right">Yes</button>
+        </div>
+
+        <nav class="tabbar">
+          <button class="tab is-on">Explore</button>
+          <button class="tab">Likes</button>
+          <button class="tab">Chats</button>
+          <button class="tab">Profile</button>
+        </nav>
+        <div class="homebar"></div>
+      </div>
+    </section>
+
+    <!-- ========== 1b ========== -->
+    <section class="frame">
+      <div class="frame__label">
+        <span class="frame__tag">1b</span>
+        <p class="frame__caption">Card layout — offer vs ask, split down the middle</p>
+      </div>
+
+      <article class="card-split">
+        <div class="card-split__photos">
+          <div class="hatch"></div>
+          <div class="hatch--warm"></div>
+          <span class="meta">photos 2–3</span>
+        </div>
+        <div class="card-split__body">
+          <div class="name-row">
+            <h2 class="name">Marcus Bell</h2>
+            <span class="badge badge--both">BOTH</span>
+          </div>
+          <p class="role">Staff Engineer · Stripe · 9 yrs</p>
+
+          <div class="split">
+            <div class="split__box split__box--offer">
+              <span class="eyebrow">Can refer into</span>
+              <strong>Stripe · Payments, Infra</strong>
+              <em>3 slots this quarter</em>
+            </div>
+            <div class="split__box split__box--ask">
+              <span class="eyebrow">Looking for</span>
+              <strong>EM roles, Series B+</strong>
+              <em>Open to chat now</em>
+            </div>
+          </div>
+
+          <p class="quote">“Happy to walk anyone through the Stripe loop. I’m also feeling out my first EM role.”</p>
+
+          <div class="card-split__foot">
+            <span class="meta">Georgia Tech · 4 mutual</span>
+            <span class="meta">Seattle, WA</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ========== 1c ========== -->
+    <section class="frame">
+      <div class="frame__label">
+        <span class="frame__tag">1c</span>
+        <p class="frame__caption">Card layout — full-bleed photo, editorial overlay</p>
+      </div>
+
+      <article class="card-bleed hatch">
+        <span class="card-bleed__scrim"></span>
+        <span class="badge">CAN REFER</span>
+        <span class="dots"><span class="is-on"></span><span></span><span></span></span>
+        <span class="meta">photo 1 / 3</span>
+        <div class="card-bleed__body">
+          <h2 class="card-bleed__name">Daniel Okafor</h2>
+          <p class="card-bleed__meta">Senior PM · DoorDash · 6 yrs · New York, NY</p>
+          <p class="quote">“I’ve referred four people into DoorDash growth. Ask me anything about the PM loop.”</p>
+          <div class="tags">
+            <span class="chip">Growth</span><span class="chip">Marketplace</span><span class="chip">0→1</span>
+          </div>
+          <div><span class="chip chip--amber">2 mutual</span></div>
+        </div>
+      </article>
+    </section>
+
+    <!-- ========== 1d ========== -->
+    <section class="frame">
+      <div class="frame__label">
+        <span class="frame__tag">1d</span>
+        <p class="frame__caption">Match moment — coffee-first: the match screen <span class="frame__aside">is the booking screen</span></p>
+      </div>
+
+      <article class="sheet-dark">
+        <span class="eyebrow">Matched · 2 min ago</span>
+        <h2>Daniel said yes back.</h2>
+        <p>The next step that actually works is a 30-minute coffee. Pick a slot now and he just confirms.</p>
+        <div class="slots" data-slots>
+          <button class="slot"><span class="slot__time">Thu Sep 3 · 8:30 am ET</span><span class="slot__note">he’s free</span></button>
+          <button class="slot"><span class="slot__time">Sat Sep 5 · 11:00 am ET</span><span class="slot__note">he’s free</span></button>
+          <button class="slot"><span class="slot__time">Video instead</span><span class="slot__note">no venue</span></button>
+        </div>
+        <button class="btn-light">Pick a café → $16–$28</button>
+        <button class="btn-ghost-dark">Just chat for now</button>
+      </article>
+    </section>
+
+    <!-- ========== 1e ========== -->
+    <section class="frame">
+      <div class="frame__label">
+        <span class="frame__tag">1e</span>
+        <p class="frame__caption">Match moment — light, message-first with prompted openers</p>
+      </div>
+
+      <article class="sheet-light">
+        <span class="eyebrow">Mutual yes</span>
+        <div class="avatars"><div class="hatch"></div><div class="hatch--warm"></div></div>
+        <h2>You and Daniel both said yes</h2>
+        <p class="sub">He replies to 9 in 10 matches. Open with something specific and you’ll hear back.</p>
+        <div data-openers>
+          <button class="opener">“Saw you moved from Uber to DoorDash growth — what made you jump?”</button>
+          <button class="opener">“I’m targeting PM roles in marketplaces. Worth a 20-min coffee?”</button>
+        </div>
+        <button class="btn-dark">Send an opener</button>
+        <button class="btn-ghost">Keep swiping</button>
+      </article>
+    </section>
+
+    <!-- ========== 1f ========== -->
+    <section class="frame">
+      <div class="frame__label">
+        <span class="frame__tag">1f</span>
+        <p class="frame__caption">Onboarding — checklist of prompt cards, progress always visible</p>
+      </div>
+
+      <article class="checklist">
+        <h2>Let’s build your card</h2>
+        <p class="sub">Three photos and three prompts. About four minutes.</p>
+        <div class="progress"><i style="width:43%"></i></div>
+        <p class="eyebrow progress-label">3 of 7 done</p>
+
+        <div class="row"><span class="row__label">Photos · 3 of 3</span><span class="row__state row__state--done">Done</span></div>
+        <div class="row"><span class="row__label">Work history</span><span class="row__state row__state--done">Done</span></div>
+
+        <div class="row row--active" style="display:block">
+          <div class="field">
+            <p class="field__label">I can refer people into…</p>
+            <div class="field__chips">
+              <span class="chip chip--solid">Figma · Design</span>
+              <button class="chip chip--add">+ add another</button>
+            </div>
+          </div>
+          <div class="field">
+            <p class="field__label">I’m looking for…</p>
+            <div class="field__input">Senior design roles at fintechs — SF Bay Area or remote</div>
+          </div>
+        </div>
+
+        <div class="row"><span class="row__label">Pick 3 prompts</span><span class="row__state">Next</span></div>
+        <div class="row"><span class="row__label">Verify work email</span><span class="row__state">Next</span></div>
+      </article>
+    </section>
+
+    <!-- ========== 1g ========== -->
+    <section class="frame">
+      <div class="frame__label">
+        <span class="frame__tag">1g</span>
+        <p class="frame__caption">Onboarding — one question per screen, conversational</p>
+      </div>
+
+      <article class="question">
+        <div class="steps"><span class="is-on"></span><span class="is-on"></span><span></span><span></span></div>
+        <span class="eyebrow">Question 3 of 5</span>
+        <h2>Which way are you leaning right now?</h2>
+        <p class="sub">You can change this any week. It only decides what your card leads with.</p>
+
+        <div data-options>
+          <button class="option is-on">
+            <strong>I can refer someone</strong>
+            <span>Your card shows open slots and the teams you can vouch for.</span>
+          </button>
+          <button class="option">
+            <strong>I’m looking for a referral</strong>
+            <span>Your card leads with target roles and your pitch.</span>
+          </button>
+          <button class="option">
+            <strong>Honestly, both</strong>
+            <span>Split card. Most people pick this.</span>
+          </button>
+        </div>
+
+        <div class="nav">
+          <button class="back">Back</button>
+          <button class="next">Continue</button>
+        </div>
+      </article>
+    </section>
+
+  </div>
+</main>
+
+<script>
+/* --- 1a: swipe deck --------------------------------------------------- */
+const deck = document.getElementById('deck');
+document.querySelectorAll('[data-swipe]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const top = deck.querySelector('.swipecard:last-child');
+    if (!top) return;
+    top.classList.add('is-gone-' + btn.dataset.swipe);
+    setTimeout(() => {
+      deck.prepend(top);
+      top.classList.remove('is-gone-left','is-gone-right','is-gone-up');
+    }, 340);
+  });
+});
+
+/* --- 1a: photo stepper (tap the photo) -------------------------------- */
+document.querySelectorAll('[data-photos]').forEach(photo => {
+  photo.addEventListener('click', () => {
+    const dots = [...photo.querySelectorAll('.dots span')];
+    const i = dots.findIndex(d => d.classList.contains('is-on'));
+    const next = (i + 1) % dots.length;
+    dots.forEach(d => d.classList.remove('is-on'));
+    dots[next].classList.add('is-on');
+    photo.querySelector('.meta').textContent = `photo ${next + 1} / ${dots.length}`;
+  });
+});
+
+/* --- single-select groups (1d slots, 1e openers, 1g options) ---------- */
+function singleSelect(scope, selector, cls) {
+  const group = document.querySelector(scope);
+  if (!group) return;
+  group.querySelectorAll(selector).forEach(el => {
+    el.addEventListener('click', () => {
+      group.querySelectorAll(selector).forEach(x => x.classList.remove(cls));
+      el.classList.add(cls);
+    });
+  });
+}
+singleSelect('[data-slots]',   '.slot',   'is-on');
+singleSelect('[data-openers]', '.opener', 'is-on');
+singleSelect('[data-options]', '.option', 'is-on');
+</script>
+</body>
+</html>

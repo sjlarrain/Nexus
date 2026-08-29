@@ -225,3 +225,30 @@ also asserts the *permits* — a published user can read another published profi
 because a rule that denies too much breaks the product just as surely.
 
 **Still open.** Storage rules (`E12.3`) cannot be tested because Storage needs Blaze.
+
+## 2026-08-29 — The mocks override spec section 5 on palette and type
+
+**Decision.** Tokens come from `docs/mocks/planup-designs.html`, not from
+`docs/planup.md` section 5, wherever the two disagree.
+
+**Why.** CLAUDE.md section 2 says the mocks define the visual language, and they are
+the later artefact. The disagreement is not small: the spec describes Plus Jakarta
+Sans with a terracotta accent (`#a2542a`), the mock uses Inter Tight with an amber
+one (`#e9b23c`). Picking the spec would mean building something the owner has
+already moved on from. Both are recorded in `docs/design.md` so nobody reads section
+5 later and assumes the code drifted.
+
+**Kept from section 5 anyway:** the disabled primary button (ink at 28%, label
+replaced by the validation message) and the 44px touch target. Neither appears in
+the mock, both are behaviour rather than decoration, and the onboarding gates
+already return that label.
+
+**Consequence.** Fonts are self-hosted through `next/font` instead of the mock's
+Google Fonts link — a PWA should not need a third-party request to render its own
+type, and it removes the late-font layout shift.
+
+## 2026-08-29 — Open: the mock is branded PlanUp, the app is Warm Intro
+
+Not a decision yet. The mock's app bar reads **PlanUp**; the spec, the repo and
+`metadata.title` read **Warm Intro**. Nothing has been renamed either way pending
+the owner's answer.

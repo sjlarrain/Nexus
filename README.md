@@ -89,6 +89,8 @@ npx firebase deploy --only firestore:rules,firestore:indexes
 ```
 
 The app itself is not deployed yet (`E14.1`).
+[`docs/pre-deploy.md`](docs/pre-deploy.md) lists the checks, the environment
+variables Vercel needs, and the one cookie behaviour worth knowing about first.
 
 ## Layout
 

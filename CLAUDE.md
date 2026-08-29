@@ -60,6 +60,12 @@ the visual language (`docs/planup.md` §5 is the summary of it). Until those arr
 
 Rationale and alternatives: `docs/architecture.md`.
 
+**Next.js 16 differs from what you may remember.** APIs, conventions and file
+structure have all moved. The version's own docs are vendored at
+`node_modules/next/dist/docs/` — read the relevant guide there before writing
+framework code, and heed deprecation notices. (`next dev` wants to inject this note
+itself; that is turned off in `next.config.ts` so this file stays hand-written.)
+
 ## 4. Repository conventions
 
 ```

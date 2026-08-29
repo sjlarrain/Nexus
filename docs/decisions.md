@@ -281,3 +281,14 @@ labelled as such in the UI.
 Blaze plan. Without this, nobody can complete onboarding — including anyone signing
 up live during the demo. The fixtures already use external placeholder URLs, so this
 adds no new dependency, and E5 replaces it with a real upload when Storage exists.
+
+## 2026-08-29 — `next dev` may not write into CLAUDE.md
+
+**Decision.** `agentRules: false` in `next.config.ts`.
+
+**Why.** Next.js 16 appends a `<!-- BEGIN:nextjs-agent-rules -->` block to `CLAUDE.md`
+on every `next dev`. That file is the owner's working agreement (CLAUDE.md section 1),
+and a build tool rewriting it means the instructions and a vendor's text become
+indistinguishable — as well as a permanently dirty working tree. The block's actual
+content is useful, so it is restated by hand in CLAUDE.md section 3 instead, where it
+is clearly authored rather than injected.

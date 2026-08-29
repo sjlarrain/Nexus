@@ -322,5 +322,47 @@ immediately after was served the stale body, so the screen kept saying "Pick a t
 after the booking was confirmed. Fixing it at the helper covers every route at once
 rather than per-fetch at each call site.
 
-`/api/health` builds its own response and is deliberately left cacheable — it is
-public and carries no user data.
+`/api/health` builds its own response rather than going through the helper, but sets
+`no-store` too: a cached health check reports the state of a past deployment, which is
+worse than no health check at all.
+
+## 2026-08-29 — `jose` is pinned to 5.x for `jwks-rsa`
+
+**Decision.** `package.json` carries a scoped npm override:
+
+```json
+"overrides": { "jwks-rsa": { "jose": "^5.10.0" } }
+```
+
+**Why.** The first working Vercel deploy returned a bare 500 from every server route.
+The cause was module loading, not configuration:
+
+```
+ERR_REQUIRE_ESM: require() of ES Module .../jose/dist/webapi/index.js
+from .../jwks-rsa/src/utils.js not supported
+```
+
+`firebase-admin` depends on `jwks-rsa`, which does a plain `require('jose')`. `jose` 6
+is ESM-only — its export map has no `require` condition at all — so that call can only
+work on a runtime that supports `require(esm)`. Local `next start` on Node 24 does;
+the deployed function, which loads external packages through Turbopack's own module
+context, does not. Same Node version, same build, different loader: the bug could not
+be reproduced locally.
+
+`jose` 5 ships both, resolving `require` to `dist/node/cjs/index.js`, and `jwks-rsa`
+uses exactly two of its functions — `importJWK` and `exportSPKI` — both unchanged
+between 5 and 6.
+
+**Why scoped.** The override names `jwks-rsa` rather than pinning `jose` globally, so
+the only package moved off 6 is the one that cannot load it. `@modelcontextprotocol/sdk`
+(a transitive dependency of `firebase-tools`) keeps 6.
+
+**Alternatives.** Forcing Next to bundle `firebase-admin` instead of treating it as an
+external package would also avoid the shim, but `firebase-admin` loads protobuf
+definitions by path at runtime and bundling it tends to break those. Pinning one
+transitive dependency is the smaller change, and it can be dropped whenever `jwks-rsa`
+switches to a dynamic `import()`.
+
+**Consequence.** Remove this override and the app builds, passes every test locally,
+and fails on deploy — so it must not be treated as tidy-up. The health probe's
+`adminCredential: "unloadable"` exists to name this class of failure.

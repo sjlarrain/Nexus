@@ -132,10 +132,30 @@ export async function cancelBooking(uid: string, bookingId: string): Promise<voi
   await postSystemMessage(booking.matchId, 'The coffee was cancelled.');
 }
 
+/**
+ * The booking attached to a match, if there is one. The booking screen needs this to
+ * know whether to offer the propose form or the accept/cancel controls — without it
+ * a proposed coffee has no way to be accepted from the UI.
+ */
+export async function bookingForMatch(
+  uid: string,
+  matchId: string,
+): Promise<{ id: string; booking: Booking } | null> {
+  const match = await requireMatch(uid, matchId);
+  if (match.bookingId === null) return null;
+
+  const snapshot = await adminDb().collection('bookings').doc(match.bookingId).get();
+  const booking = snapshot.data() as Booking | undefined;
+  // A match pointing at a booking that no longer exists is treated as unbooked
+  // rather than an error, so the pair can simply propose again.
+  if (!booking || booking.status === 'cancelled') return null;
+
+  return { id: snapshot.id, booking };
+}
+
 export async function loadBooking(uid: string, bookingId: string): Promise<Booking> {
   const booking = (await adminDb().collection('bookings').doc(bookingId).get()).data() as
-    | Booking
-    | undefined;
+    Booking | undefined;
   if (!booking) throw notFound('No such booking.');
   if (!booking.participants.includes(uid)) throw forbidden('That is not your booking.');
   return booking;

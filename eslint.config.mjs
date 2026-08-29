@@ -15,7 +15,15 @@ const config = [
   },
   {
     // CLAUDE.md section 4: privileged server code must never reach the client bundle.
+    //
+    // The rule cannot see whether a .tsx is a client or a server component, so it
+    // treats every one as a client. `src/app/page.tsx` is the one genuine server
+    // component in the app — it reads the session cookie and redirects, and renders
+    // no markup at all — so it is excluded here rather than by an inline disable,
+    // which would be invisible to anyone auditing the boundary. Any new exclusion
+    // needs the same justification: no 'use client', no rendered output.
     files: ['src/app/**/*.tsx', 'src/components/**/*.tsx'],
+    ignores: ['src/app/page.tsx'],
     rules: {
       'no-restricted-imports': [
         'error',

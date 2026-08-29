@@ -292,3 +292,35 @@ and a build tool rewriting it means the instructions and a vendor's text become
 indistinguishable — as well as a permanently dirty working tree. The block's actual
 content is useful, so it is restated by hand in CLAUDE.md section 3 instead, where it
 is clearly authored rather than injected.
+
+## 2026-08-29 — `/` decides and redirects; it is not a page
+
+**Decision.** The root route is a server component that reads the session and
+redirects: signed out to `/signin`, part-way through onboarding to the saved step,
+published to `/deck`. It renders no markup.
+
+**Why.** There is nothing to show at `/` — everyone arriving is in one of those three
+states, and the deployed placeholder ("Backend scaffolding. Screens land once the
+mocks do.") was the first thing a visitor saw. Deciding server-side means no flash of
+the wrong screen, which a client-side redirect cannot avoid.
+
+**Consequence.** This is the only `.tsx` under `src/app` that imports from
+`src/server`, so it is excluded by name from the ESLint boundary rule rather than by
+an inline disable — an exclusion in the config is visible to anyone auditing the
+boundary. It qualifies because it carries no `'use client'` and returns nothing.
+
+## 2026-08-29 — API responses are `no-store`
+
+**Decision.** The shared `route()` helper sets `Cache-Control: no-store,
+must-revalidate` on every response, success and error alike.
+
+**Why.** Two reasons, one found by accident. Every endpoint answers for one signed-in
+user, so a shared proxy caching a response could hand one person's deck or chat to
+another. And with no `Cache-Control` at all the browser was free to apply heuristic
+caching: confirming a coffee wrote correctly to Firestore, but the refetch
+immediately after was served the stale body, so the screen kept saying "Pick a time"
+after the booking was confirmed. Fixing it at the helper covers every route at once
+rather than per-fetch at each call site.
+
+`/api/health` builds its own response and is deliberately left cacheable — it is
+public and carries no user data.

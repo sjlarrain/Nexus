@@ -109,3 +109,21 @@
   color: var(--ink-2);
   margin-left: -12px;
 }
+
+.cancel {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin-top: 14px;
+  min-height: var(--touch-min);
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.cancel:disabled {
+  opacity: var(--disabled-opacity);
+}
+
+.slot:disabled {
+  opacity: 0.85;
+}

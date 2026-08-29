@@ -17,7 +17,7 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · 🔒 blocked on the own
 - [x] `E0.1` Scaffold Next.js App Router + TypeScript strict, `src/` layout
 - [x] `E0.2` ESLint + Prettier + `npm run typecheck` / `lint` / `test` scripts
 - [x] `E0.3` Vitest set up; one smoke test that actually runs in CI
-- [ ] `E0.4` Folder skeleton per `CLAUDE.md` §4
+- [x] `E0.4` Folder skeleton per `CLAUDE.md` §4
 - [x] `E0.5` `.env.example` with every key the app reads, documented inline
 - [ ] `E0.6` GitHub Actions: typecheck + lint + test on push
 - [x] `E0.7` Path aliases (`@/lib`, `@/server`) + lint rule forbidding `@/server`
@@ -25,12 +25,13 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · 🔒 blocked on the own
 
 ## E1 — Firebase & environment
 
-- [ ] `E1.1` 🔒 Owner creates one Firebase project (demo/prod) and hands over the web
+- [x] `E1.1` 🔒 Owner creates one Firebase project (demo/prod) and hands over the web
       config + a service-account key. Local dev runs on emulators only.
 - [x] `E1.2` Client SDK init (`src/lib/firebase/client.ts`), singleton-safe under HMR
 - [x] `E1.3` Admin SDK init (`src/server/firebase/admin.ts`) from a base64 service
       account env var; never a JSON file on disk
-- [x] `E1.4` Firebase Emulator Suite (auth, firestore, storage) + `npm run dev:emul`
+- [ ] `E1.4` 🔒 Firebase Emulator Suite (auth, firestore, storage) + `npm run dev:emul`
+      — config is committed but the suite needs a JDK, which is not installed (docs/decisions.md)
 - [x] `E1.5` `firestore.indexes.json` committed and deployed from CI
 
 ## E1b — Simulated data toolkit (build-a-thon priority)
@@ -144,8 +145,8 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E10 — Coffee booking
 
-- [ ] `E10.1` 🔒 Pick a venue search provider (Google Places / Mapbox / Foursquare) —
-      needs a billing decision
+- [x] `E10.1` Venue source decided: seeded café list, no paid places API
+      (docs/decisions.md) — revisit if the demo needs real coverage
 - [x] `E10.2` `GET /api/venues?near=` returning three nearby venues, plus manual search
 - [x] `E10.3` Chat-mentioned cafe pinned first, tagged "Mentioned in your chat"
 - [x] `E10.4` Two 30-minute slot proposals; `POST /api/bookings` with a
@@ -157,7 +158,7 @@ Covers spec §4 (profile object) and §3 (gating).
 ## E11 — Profile screen and activity
 
 - [x] `E11.1` `GET /api/me` — card preview payload
-- [ ] `E11.2` 🔒 Reply-rate computation — exact definition needed — and its storage
+- [ ] `E11.2` Reply-rate computation (replies ÷ conversations started with you) and its storage
 - [ ] `E11.3` Editable prompts `p1` / `p2` / `p3`
 - [ ] `E11.4` Activity feed events (liked you, matched, message, booking)
 
@@ -173,7 +174,7 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E13 — Integrations
 
-- [ ] `E13.1` 🔒 LinkedIn Connect — real OAuth needs an approved LinkedIn app. Ships
+- [ ] `E13.1` LinkedIn Connect — real OAuth needs an approved LinkedIn app. Ships
       behind a feature flag with fixtures until then. Fills the URL field and imports
       the education entry; label flips to "Imported from LinkedIn · Refresh"
 - [ ] `E13.2` 🔒 Transactional email (new match, new message, booking confirmed) —
@@ -208,13 +209,10 @@ Nothing here starts until the mocks land in `docs/mocks/`.
 
 Tracked here until answered, then moved to `docs/decisions.md`.
 
-1. **Venue provider** — Google Places has the best data but needs billing enabled.
-   For a build-a-thon, a seeded venue list may be enough.
-2. **LinkedIn** — v1 or stubbed behind a flag?
-3. **Deck scope** — nationwide from day one, or city-scoped so the deck feels dense?
-4. **Reply rate** — exact definition shown on the profile screen.
-5. **Undo swipe** — in scope for v1?
-6. **Build-a-thon date** — when is the demo? It changes what gets cut.
+1. **Undo swipe** — in scope for v1? (`E7.5`)
+2. **Rules tests** — the emulator needs a JDK that is not installed. Install Java, or
+   write the tests against the live project with throwaway users? (`E12.2`, `E12.3`)
+3. **Transactional email** — provider, or cut for the demo? (`E13.2`)
 
-Answered (see [`docs/decisions.md`](docs/decisions.md)): environments, platform,
-email sign-in method.
+Answered (see [`docs/decisions.md`](docs/decisions.md)): environments, platform, email
+sign-in method, deck scope, LinkedIn, venue source, reply-rate definition, demo date.

@@ -25,6 +25,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* The mock has no inline prose links — every link in this app is a row, card or
+   tab — so links inherit their surroundings rather than arriving browser-blue. */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
 button {
   font: inherit;
   color: inherit;

@@ -1,0 +1,298 @@
+/* Onboarding, one question per screen (mock 1g). */
+
+.frame {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: var(--paper);
+  padding: 24px 20px 22px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* The mock's four-segment progress bar, one segment per step. */
+.steps {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-bottom: 22px;
+}
+
+.steps span {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--line-2);
+}
+
+/* Needs the element in the selector too: `.steps span` would otherwise outrank a
+   bare `.stepOn` and every segment would stay grey. */
+.steps span.stepOn {
+  background: var(--ink);
+}
+
+.heading {
+  font-family: var(--display);
+  font-size: 31px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.06;
+  margin: 12px 0 10px;
+}
+
+.sub {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-3);
+  margin: 0 0 20px;
+}
+
+.body {
+  flex: 1 1 auto;
+}
+
+.section {
+  margin-bottom: 22px;
+}
+
+.option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 15px 16px;
+  margin-bottom: 10px;
+  background: var(--paper);
+  min-height: var(--touch-min);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.option:hover {
+  border-color: var(--line-dark);
+}
+
+.optionOn {
+  border: 1.5px solid var(--ink);
+  background: var(--paper-2);
+}
+
+.option strong {
+  display: block;
+  font-size: 15.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+.option span {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+.nav {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  align-items: stretch;
+}
+
+.back {
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 15px 24px;
+  min-height: var(--touch-min);
+  font-size: 14.5px;
+}
+
+.next {
+  flex: 1;
+}
+
+.saveExit {
+  margin-top: 4px;
+}
+
+/* --- fields ---------------------------------------------------------- */
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.row > * {
+  flex: 1;
+}
+
+.counter {
+  display: block;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+.counterOver {
+  color: var(--peach-ink);
+}
+
+.select {
+  display: block;
+  width: 100%;
+  background: #efede8;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 12px 13px;
+  min-height: var(--touch-min);
+  font-family: var(--body);
+  font-size: 13.5px;
+  color: var(--ink);
+  appearance: none;
+}
+
+.select:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.textarea {
+  display: block;
+  width: 100%;
+  background: #efede8;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 12px 13px;
+  min-height: 96px;
+  font-family: var(--body);
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.textarea:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+/* --- photos (mock 1a shows three slots) ------------------------------ */
+
+.photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.photoSlot {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--r-box);
+  overflow: hidden;
+  display: grid;
+  place-items: end center;
+  padding-bottom: 8px;
+}
+
+.photoSlot img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoSlotLabel {
+  position: relative;
+  z-index: 1;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: var(--r-pill);
+  padding: 3px 7px;
+}
+
+/* --- lists (schools, doors) ------------------------------------------ */
+
+.listRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.listRow p {
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.listRow small {
+  display: block;
+  color: var(--ink-3);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.remove {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+}
+
+.doorHelp {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.status {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 10px 0 0;
+}
+
+/* --- step 5 review --------------------------------------------------- */
+
+.reviewRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 15px 16px;
+  margin-bottom: 9px;
+  text-align: left;
+  min-height: var(--touch-min);
+}
+
+.reviewLabel {
+  font-size: 14.5px;
+}
+
+.reviewState {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.reviewDone {
+  color: var(--ink);
+  font-weight: 500;
+}

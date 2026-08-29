@@ -57,9 +57,9 @@ The demo lives or dies on the deck feeling full. This gets its own epic.
 
 - [ ] `E2.1` Google sign-in + email/password sign-in via Firebase Auth, including
       password rules and a reset flow
-- [ ] `E2.2` Session: ID token to httpOnly session cookie, verified in route handlers
-- [ ] `E2.3` `requireUser()` server helper returning a typed `AuthedUser`
-- [ ] `E2.4` On first sign-in, create `users/{uid}` shell + `users/{uid}/private/meta`
+- [x] `E2.2` Session: ID token to httpOnly session cookie, verified in route handlers
+- [x] `E2.3` `requireUser()` server helper returning a typed `AuthedUser`
+- [x] `E2.4` On first sign-in, create `users/{uid}` shell + `users/{uid}/private/meta`
 - [ ] `E2.5` Route protection: unauthenticated to auth screen; authenticated but
       unpublished resumes onboarding at the saved step
 - [ ] `E2.6` Sign-out and account deletion (removes profile, swipes, inbox, storage)
@@ -72,12 +72,12 @@ Covers spec §4 (profile object) and §3 (gating).
       including `mode: 'working' | 'student' | 'looking'`
 - [x] `E3.2` Per-step gate refinements matching the §3 table, each returning the
       missing-field message used as the disabled button label
-- [ ] `E3.3` Draft-state fields (`schoolDraft`, `referDraft`, ...) stay out of the
+- [x] `E3.3` Draft-state fields (`schoolDraft`, `referDraft`, ...) stay out of the
       persisted document — they are form state, not profile data
-- [ ] `E3.4` `PATCH /api/profile` — partial, per-step, validated, idempotent
-- [ ] `E3.5` "Save & exit": persist partial progress + `onboarding.step` on every step
+- [x] `E3.4` `PATCH /api/profile` — partial, per-step, validated, idempotent
+- [x] `E3.5` "Save & exit": persist partial progress + `onboarding.step` on every step
       transition and on explicit save
-- [ ] `E3.6` `POST /api/profile/publish` — full validation, sets `onboarding.completed`,
+- [x] `E3.6` `POST /api/profile/publish` — full validation, sets `onboarding.completed`,
       makes the user visible in decks
 - [x] `E3.7` Unit tests for every row of the §3 gate table, pass and fail cases
 
@@ -106,35 +106,35 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E6 — Deck and candidate feed
 
-- [ ] `E6.1` `GET /api/deck` — exclusion set (self, already swiped, matched, blocked)
+- [x] `E6.1` `GET /api/deck` — exclusion set (self, already swiped, matched, blocked)
 - [x] `E6.2` Filters: industry, role, location, direction — server-side, paginated
 - [x] `E6.3` v1 ranking per `docs/architecture.md` §5, unit-tested and explainable
 - [x] `E6.4` Card payload shape: only the fields the card renders; role line composed
       by filtering empty parts before joining with " · " (spec §6)
-- [ ] `E6.5` Prefetch + cursor so the deck never blocks on a swipe
+- [x] `E6.5` Prefetch + cursor so the deck never blocks on a swipe
 
 ## E7 — Swipes and matching
 
-- [ ] `E7.1` `POST /api/swipe` accepting `yes` / `no` / `priority`
-- [ ] `E7.2` Transactional mutual-match detection; deterministic `matchId` so
+- [x] `E7.1` `POST /api/swipe` accepting `yes` / `no` / `priority`
+- [x] `E7.2` Transactional mutual-match detection; deterministic `matchId` so
       simultaneous swipes cannot double-create a match
-- [ ] `E7.3` Write `inbox/{them}/likes/{me}`; `priority` (swipe up) sorts to the top of
+- [x] `E7.3` Write `inbox/{them}/likes/{me}`; `priority` (swipe up) sorts to the top of
       their Likes (spec §1)
 - [ ] `E7.4` Rate limiting and a daily swipe cap
 - [ ] `E7.5` 🔒 Undo last swipe — in scope for v1?
-- [ ] `E7.6` Tests: mutual yes, double-swipe race, self-swipe, swipe on a stale card
+- [x] `E7.6` Tests: mutual yes, double-swipe race, self-swipe, swipe on a stale card
 
 ## E8 — Likes
 
-- [ ] `E8.1` `GET /api/likes` — inbound likes, priority first, then recency
-- [ ] `E8.2` Yes-back matches instantly and returns the match-moment payload
-- [ ] `E8.3` Pass from the Likes screen removes the inbound like
+- [x] `E8.1` `GET /api/likes` — inbound likes, priority first, then recency
+- [x] `E8.2` Yes-back matches instantly and returns the match-moment payload
+- [x] `E8.3` Pass from the Likes screen removes the inbound like
 
 ## E9 — Chat
 
 - [ ] `E9.1` `POST /api/matches/{id}/messages` plus a realtime `onSnapshot` read stream
 - [ ] `E9.2` Rules: only participants read or write; no thread exists without a match
-- [ ] `E9.3` `lastMessage` denormalised onto the match for the list view
+- [x] `E9.3` `lastMessage` denormalised onto the match for the list view
 - [ ] `E9.4` Read receipts / unread counts
 - [x] `E9.5` `suggest()` as a pure function implementing the six ordered rules in §1
 - [x] `E9.6` Cafe-name detection in a thread, shared with the booking screen's
@@ -156,7 +156,7 @@ Covers spec §4 (profile object) and §3 (gating).
 
 ## E11 — Profile screen and activity
 
-- [ ] `E11.1` `GET /api/me` — card preview payload
+- [x] `E11.1` `GET /api/me` — card preview payload
 - [ ] `E11.2` 🔒 Reply-rate computation — exact definition needed — and its storage
 - [ ] `E11.3` Editable prompts `p1` / `p2` / `p3`
 - [ ] `E11.4` Activity feed events (liked you, matched, message, booking)

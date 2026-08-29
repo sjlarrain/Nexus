@@ -82,17 +82,10 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if isParticipant(matchId);
 
-        // Messages are the one client write path in chat: cheap, high volume, and
-        // fully checkable here. Everything else about a match is server-written.
-        allow create: if isParticipant(matchId)
-          && request.resource.data.from == request.auth.uid
-          && request.resource.data.kind == 'text'
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 2000
-          && request.resource.data.createdAt == request.time;
-
-        allow update, delete: if false;
+        // Server-written. A message is really two writes — the message itself and
+        // the lastMessage summary the match list reads — and only the server can do
+        // both atomically. A client-side create would leave that summary stale.
+        allow write: if false;
       }
     }
 

@@ -136,3 +136,14 @@ side spoke.
 
 **Undo swipe:** cut from v1 (Claude's default, not contradicted). Revisit after the
 demo.
+
+## 2026-08-28 — Messages are server-written, not client-written
+**Decision:** `firestore.rules` denies client writes to `matches/{id}/messages`.
+Sending a message goes through `POST /api/matches/{id}/messages`.
+**Why:** a message is really two writes — the message document and the `lastMessage`
+summary the match list reads. Only the server can do both in one batch. Allowing a
+client-side create would leave that summary stale and the match list wrong.
+**Cost:** a message round-trips to a route handler instead of straight to Firestore.
+Clients still read the thread live via `onSnapshot`, so incoming messages are instant;
+only the send is server-mediated.
+**Decided by:** Claude.

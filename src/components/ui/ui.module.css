@@ -1,0 +1,302 @@
+/* ============================================================
+   UI PRIMITIVES (BACKLOG E15.2)
+
+   Every value here comes from docs/mocks/planup-designs.html via tokens.css.
+   No raw hex, no invented spacing.
+   ============================================================ */
+
+/* --- text atoms ------------------------------------------------------ */
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.quote {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* --- chip ------------------------------------------------------------ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line-2);
+  border-radius: 7px;
+  padding: 4px 9px;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  background: var(--paper);
+}
+
+.chipAmber {
+  background: var(--amber-soft);
+  border-color: transparent;
+  color: var(--amber-ink);
+  font-weight: 500;
+}
+
+.chipSolid {
+  background: var(--ink);
+  color: var(--ink-inv);
+  border-color: transparent;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.chipPill {
+  border-radius: var(--r-pill);
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
+/* --- badge ----------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--paper);
+  border-radius: var(--r-pill);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+/* --- buttons --------------------------------------------------------- */
+
+/* The mock's ink-filled primary. Spec section 5: disabled is ink at 28% and the
+   label becomes the validation message — see PrimaryButton in index.tsx. */
+.primary {
+  display: block;
+  width: 100%;
+  background: var(--ink);
+  color: var(--ink-inv);
+  border-radius: 12px;
+  padding: 15px;
+  min-height: var(--touch-min);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.primary:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+
+/* Same button on a dark sheet (1d). */
+.light {
+  display: block;
+  width: 100%;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: var(--r-pill);
+  padding: 15px;
+  min-height: var(--touch-min);
+  font-size: 14.5px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.light:disabled {
+  opacity: var(--disabled-opacity);
+  cursor: not-allowed;
+}
+
+.ghost {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 12px;
+  min-height: var(--touch-min);
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.ghostDark {
+  composes: ghost;
+  color: var(--ink-inv-2);
+}
+
+.pillButton {
+  border: 1px solid var(--line-2);
+  background: var(--paper);
+  border-radius: var(--r-pill);
+  padding: 6px 13px;
+  font-size: 12.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pillDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amber);
+}
+
+/* --- card ------------------------------------------------------------ */
+
+.card {
+  background: var(--paper);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.refbox {
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  padding: 10px 12px;
+}
+
+.refbox p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+/* --- photo stepper --------------------------------------------------- */
+
+.dots {
+  display: flex;
+  gap: 3px;
+}
+
+.dots span {
+  width: 16px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: rgba(20, 18, 15, 0.18);
+}
+
+.dots span.dotOn {
+  background: var(--ink);
+}
+
+/* Empty or failed photo slots hatch rather than showing a grey hole. */
+.hatch {
+  background-color: var(--hatch);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.5) 0 5px,
+    transparent 5px 11px
+  );
+}
+
+.hatchWarm {
+  background-color: var(--hatch-warm);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.5) 0 5px,
+    transparent 5px 11px
+  );
+}
+
+/* --- form field (1f/1g) ---------------------------------------------- */
+
+.field {
+  margin-bottom: 14px;
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.fieldLabel {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  margin: 0 0 9px;
+}
+
+.fieldChips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  background: #efede8;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 12px 13px;
+  min-height: var(--touch-min);
+  font-family: var(--body);
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+.input:focus {
+  border-color: var(--ink);
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--ink-3);
+}
+
+/* --- multi-select grid (spec section 5) ------------------------------ */
+
+/* "Aligned grid, two equal columns, 6px gap. No ragged wrapping chip rows." */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+}
+
+.gridThree {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.gridCell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: 11px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 11px;
+  background: var(--paper);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  text-align: left;
+  transition: border-color 0.15s ease;
+}
+
+.gridCell:hover {
+  border-color: var(--line-dark);
+}
+
+.gridCellOn {
+  background: var(--ink);
+  border-color: transparent;
+  color: var(--ink-inv);
+  font-weight: 500;
+}
+
+.gridCheck {
+  flex: 0 0 auto;
+  font-size: 11px;
+}

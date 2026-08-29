@@ -11,6 +11,13 @@ export type Card = {
   name: string;
   /** "Senior PM · DoorDash · Austin, TX" — see composeRoleLine. */
   roleLine: string;
+  /**
+   * The deck card splits these out: mock 1a puts the city in the name row and the
+   * role line reads "Senior PM · DoorDash · 6 yrs". `roleLine` is kept as it was for
+   * every other screen, which shows the city inline.
+   */
+  deckLine: string;
+  city: string;
   headline: string;
   photos: Photo[];
   badge: string | null;
@@ -63,6 +70,25 @@ export function roleLineFor(profile: Profile): string {
   }
 }
 
+/**
+ * The deck card's role line (mock 1a): role, employer and tenure, with the city
+ * lifted out into the name row. Same mode rules as `roleLineFor`, minus the city.
+ */
+export function deckLineFor(profile: Profile): string {
+  const school = profile.schools[0]?.name ?? profile.school2;
+  const years = profile.years.trim() ? `${profile.years} yrs` : '';
+
+  switch (profile.mode) {
+    case 'student':
+      return composeRoleLine(profile.lane, school, profile.gradYear);
+    case 'looking':
+      return composeRoleLine(profile.role, `ex-${profile.company}`, years);
+    case 'working':
+    case null:
+      return composeRoleLine(profile.role, profile.company, years);
+  }
+}
+
 /** Small set of chips under the card: what they do and what they are into. */
 export function tagsFor(profile: Profile, limit = 5): string[] {
   const tags = [profile.industry, ...profile.lanes, ...profile.interests];
@@ -81,8 +107,13 @@ export function tagsFor(profile: Profile, limit = 5): string[] {
 export function toCard(uid: string, profile: Profile): Card {
   return {
     uid,
-    name: [profile.first, profile.last].map((p) => p.trim()).filter(Boolean).join(' '),
+    name: [profile.first, profile.last]
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .join(' '),
     roleLine: roleLineFor(profile),
+    deckLine: deckLineFor(profile),
+    city: profile.city,
     headline: profile.headline,
     photos: profile.photos,
     badge: badgeFor(profile),

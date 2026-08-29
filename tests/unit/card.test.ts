@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { badgeFor, composeRoleLine, roleLineFor, tagsFor, toCard } from '@/lib/cards/card';
+import {
+  badgeFor,
+  composeRoleLine,
+  deckLineFor,
+  roleLineFor,
+  tagsFor,
+  toCard,
+} from '@/lib/cards/card';
 import { emptyProfile, type Profile } from '@/lib/schemas/profile';
 
 function profile(overrides: Partial<Profile> = {}): Profile {
@@ -130,6 +137,8 @@ describe('toCard', () => {
     expect(Object.keys(card).sort()).toEqual(
       [
         'badge',
+        'city',
+        'deckLine',
         'direction',
         'doors',
         'headline',
@@ -141,6 +150,49 @@ describe('toCard', () => {
         'tags',
         'uid',
       ].sort(),
+    );
+  });
+});
+
+/** Mock 1a lifts the city into the name row, so the deck line drops it. */
+describe('deckLineFor', () => {
+  it('reads role, employer and tenure', () => {
+    const card = deckLineFor(
+      profile({
+        mode: 'working',
+        role: 'Senior PM',
+        company: 'DoorDash',
+        years: '4-6',
+        city: 'New York, NY',
+      }),
+    );
+    expect(card).toBe('Senior PM · DoorDash · 4-6 yrs');
+  });
+
+  it('never contains the city', () => {
+    const line = deckLineFor(
+      profile({ mode: 'working', role: 'PM', company: 'Figma', city: 'San Francisco, CA' }),
+    );
+    expect(line).not.toContain('San Francisco');
+  });
+
+  it('marks a former employer when someone is looking', () => {
+    const line = deckLineFor(
+      profile({ mode: 'looking', role: 'PM', company: 'DoorDash', years: '4-6' }),
+    );
+    expect(line).toBe('PM · ex-DoorDash · 4-6 yrs');
+  });
+
+  it('leads a student with their course and school', () => {
+    const line = deckLineFor(
+      profile({ mode: 'student', lane: 'Design', school2: 'NYU', gradYear: '2027' }),
+    );
+    expect(line).toBe('Design · NYU · 2027');
+  });
+
+  it('drops tenure when it is unset, without a dangling separator', () => {
+    expect(deckLineFor(profile({ mode: 'working', role: 'PM', company: 'Figma', years: '' }))).toBe(
+      'PM · Figma',
     );
   });
 });

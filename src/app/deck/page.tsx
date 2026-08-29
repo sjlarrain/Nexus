@@ -1,16 +1,21 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import AppShell from '@/components/AppShell';
 import ActivityStrip from './activity-strip';
+import MatchMoment from '@/components/MatchMoment';
+import SwipeCard, { SwipeActions, deckClass, emptyClass } from '@/components/SwipeCard';
+import { Chip, PillButton } from '@/components/ui';
 import type { Card } from '@/lib/cards/card';
+import type { SwipeAction } from '@/lib/schemas/entities';
+import styles from './deck.module.css';
 
 /**
- * The swipe deck (spec section 1).
+ * The swipe deck (mock 1a, spec section 1).
  *
- * UNSTYLED ON PURPOSE — see CLAUDE.md section 2. There is no drag gesture here yet
- * either: the thresholds (dx ±105, dy −110) belong with the real card component once
- * the mocks land. Buttons stand in for the three gestures so the write path,
- * match detection, and exclusion logic can be exercised end to end.
+ * Two cards are rendered so the one underneath is already there when the top card
+ * leaves. The exit animation is owned here rather than in the card, because a swipe
+ * can come from either a drag or the button row.
  */
 
 type DeckCard = Card & { score: number };
@@ -19,14 +24,16 @@ export default function DeckPage() {
   const [cards, setCards] = useState<DeckCard[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [matched, setMatched] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState<SwipeAction | null>(null);
+  const [matched, setMatched] = useState<{ matchId: string; card: Card } | null>(null);
+  const [showActivity, setShowActivity] = useState(false);
 
-  /** Fetches without touching state, so callers decide when to render. */
   const fetchDeck = useCallback(async (): Promise<DeckCard[]> => {
     const response = await fetch('/api/deck');
     const body: unknown = await response.json();
-    if (!response.ok)
+    if (!response.ok) {
       throw new Error((body as { error?: string }).error ?? 'Could not load the deck.');
+    }
     return (body as { cards: DeckCard[] }).cards;
   }, []);
 
@@ -47,14 +54,27 @@ export default function DeckPage() {
     };
   }, [fetchDeck]);
 
-  async function swipe(targetUid: string, action: 'yes' | 'no' | 'priority') {
-    // Optimistic: the card leaves immediately, as a swipe should feel instant.
-    setCards((current) => current.filter((card) => card.uid !== targetUid));
+  /** Plays the exit animation, then commits the swipe. */
+  function intent(action: SwipeAction): void {
+    if (leaving) return;
+    setLeaving(action);
+    window.setTimeout(() => {
+      setLeaving(null);
+      void commit(action);
+    }, 320);
+  }
+
+  async function commit(action: SwipeAction): Promise<void> {
+    const card = cards[0];
+    if (!card) return;
+
+    // Optimistic: the card has already animated away, so it must not come back.
+    setCards((current) => current.slice(1));
 
     const response = await fetch('/api/swipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ targetUid, action }),
+      body: JSON.stringify({ targetUid: card.uid, action }),
     });
     const body: unknown = await response.json();
 
@@ -66,59 +86,70 @@ export default function DeckPage() {
       return;
     }
 
-    if ((body as { matched: boolean }).matched) {
-      setMatched((body as { matchId: string }).matchId);
+    const result = body as { matched: boolean; matchId: string | null };
+    if (result.matched && result.matchId) {
+      setMatched({ matchId: result.matchId, card });
     }
   }
 
-  if (loading) return <main>Loading the deck...</main>;
-  if (error)
+  if (loading) {
     return (
-      <main role="alert">
-        {error} — <a href="/signin">sign in</a>
-      </main>
+      <AppShell>
+        <p className={emptyClass}>Loading the deck…</p>
+      </AppShell>
     );
+  }
+
+  if (error) {
+    return (
+      <AppShell>
+        <p className={emptyClass} role="alert">
+          {error} — <a href="/signin">sign in</a>
+        </p>
+      </AppShell>
+    );
+  }
+
+  const [top, next] = cards;
 
   return (
-    <main>
-      <h1>Deck</h1>
-      <p>
-        <a href="/likes">Likes</a> · <a href="/chat">Conversations</a> ·{' '}
-        <a href="/profile">Your profile</a>
-      </p>
+    <AppShell
+      actions={
+        <>
+          <PillButton dot onClick={() => setShowActivity((open) => !open)}>
+            Activity
+          </PillButton>
+          <PillButton>Filters</PillButton>
+        </>
+      }
+    >
+      {showActivity ? <ActivityStrip /> : null}
 
-      <ActivityStrip />
+      {/* Filters are display-only until the sheet is built (BACKLOG E15.4). */}
+      <div className={styles.filters}>
+        <Chip pill>Any industry</Chip>
+        <Chip pill>Any role</Chip>
+        <Chip pill>Nationwide</Chip>
+      </div>
+
+      <div className={deckClass}>
+        {next ? <SwipeCard key={next.uid} card={next} onIntent={() => {}} interactive={false} /> : null}
+        {top ? (
+          <SwipeCard key={top.uid} card={top} onIntent={intent} leaving={leaving} />
+        ) : (
+          <p className={emptyClass}>Nobody left for now. Try widening your filters.</p>
+        )}
+      </div>
+
+      {top ? <SwipeActions onIntent={intent} disabled={leaving !== null} /> : null}
 
       {matched ? (
-        <p role="status">
-          It is a match. <a href={`/chat/${matched}`}>Open the chat</a>
-        </p>
+        <MatchMoment
+          matchId={matched.matchId}
+          counterpart={matched.card}
+          onDismiss={() => setMatched(null)}
+        />
       ) : null}
-
-      {cards.length === 0 ? <p>Nobody left for now.</p> : null}
-
-      <ul>
-        {cards.map((card) => (
-          <li key={card.uid}>
-            <h2>{card.name}</h2>
-            <p>{card.roleLine}</p>
-            <p>{card.headline}</p>
-            {card.badge ? <p>{card.badge}</p> : null}
-            {card.doors.length > 0 ? <p>Can open doors at: {card.doors.join(', ')}</p> : null}
-            <p>{card.tags.join(' · ')}</p>
-
-            <button type="button" onClick={() => void swipe(card.uid, 'no')}>
-              Pass
-            </button>
-            <button type="button" onClick={() => void swipe(card.uid, 'yes')}>
-              Interested
-            </button>
-            <button type="button" onClick={() => void swipe(card.uid, 'priority')}>
-              Priority ask
-            </button>
-          </li>
-        ))}
-      </ul>
-    </main>
+    </AppShell>
   );
 }

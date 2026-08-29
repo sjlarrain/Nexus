@@ -1,0 +1,212 @@
+/* The deck card from mock 1a. */
+
+.deck {
+  position: relative;
+  margin: 0 18px;
+  flex: 1 1 auto;
+  min-height: 420px;
+}
+
+.card {
+  position: absolute;
+  inset: 0;
+  background: var(--paper);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  touch-action: pan-y;
+  user-select: none;
+}
+
+/* Only the settling animation is transitioned; while a finger is down the card
+   follows it with no easing, or the drag feels laggy. */
+.settling {
+  transition:
+    transform 0.32s cubic-bezier(0.2, 0.7, 0.3, 1),
+    opacity 0.32s ease;
+}
+
+.goneLeft {
+  transform: translateX(-120%) rotate(-9deg);
+  opacity: 0;
+}
+
+.goneRight {
+  transform: translateX(120%) rotate(9deg);
+  opacity: 0;
+}
+
+.goneUp {
+  transform: translateY(-120%);
+  opacity: 0;
+}
+
+.photo {
+  position: relative;
+  /* The mock is a fixed 382x812 phone; real ones are shorter. Cap by viewport so
+     the body below is never pushed out of reach. */
+  height: min(300px, 38dvh);
+  flex: 0 0 auto;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+/* Sits on top of the hatch, so a photo that fails to load degrades to the hatch
+   rather than to a white hole — the demo may well run on bad wifi. */
+.photoImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo .badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+/* A scrim, so the photo counter and dots stay legible over a real photograph.
+   The mock only ever shows them over a flat hatch. */
+.photoScrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  background: linear-gradient(180deg, rgba(18, 17, 16, 0) 0%, rgba(18, 17, 16, 0.45) 100%);
+  pointer-events: none;
+}
+
+.photoMeta {
+  position: absolute;
+  left: 14px;
+  bottom: 12px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.photoDots {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+}
+
+.photoDots span span {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.photoDots span span:global(.dotOn) {
+  background: #fff;
+}
+
+.body {
+  padding: 18px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.nameRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.name {
+  font-family: var(--display);
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.role {
+  font-size: 13.5px;
+  color: var(--ink-2);
+  margin: -6px 0 0;
+}
+
+.tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* --- what the drag is about to do ------------------------------------ */
+
+.verdict {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 3;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--ink-inv);
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* --- action row ------------------------------------------------------ */
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 20px 0 12px;
+}
+
+.act {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  transition: transform 0.12s ease;
+}
+
+.act:active {
+  transform: scale(0.94);
+}
+
+.pass {
+  width: 56px;
+  height: 56px;
+  background: var(--paper);
+  border: 1px solid var(--line-2);
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.boost {
+  width: 48px;
+  height: 48px;
+  background: var(--amber);
+  color: var(--ink);
+  font-size: 18px;
+}
+
+.yes {
+  width: 56px;
+  height: 56px;
+  background: var(--ink);
+  color: var(--ink-inv);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  padding: 40px 24px;
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 14px;
+}

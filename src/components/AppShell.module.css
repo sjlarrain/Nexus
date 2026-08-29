@@ -1,0 +1,92 @@
+/* App chrome from mock 1a: app bar, filter row, tab bar. */
+
+.shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--paper-2);
+}
+
+.appbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px 10px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.brandName {
+  font-family: var(--display);
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.brandBeta {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+}
+
+.actions {
+  display: flex;
+  gap: 7px;
+}
+
+.main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 34px 6px;
+  border-top: 1px solid var(--line);
+  background: var(--paper-2);
+  position: sticky;
+  bottom: 0;
+}
+
+.tab {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  padding-bottom: 6px;
+  min-height: var(--touch-min);
+  position: relative;
+  text-decoration: none;
+}
+
+.tabOn {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.tabOn::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 2px;
+}
+
+.homebar {
+  width: 132px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line-2);
+  margin: 8px auto 4px;
+}

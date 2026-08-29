@@ -66,7 +66,7 @@ async function showDeck(): Promise<void> {
     );
     process.stdout.write(`       ${roleLineFor(card.profile)}\n`);
     process.stdout.write(
-      `       doors ${s.doorOverlap} · direction ${s.directionComplement} · industry ${s.industryOverlap} · function ${s.laneOverlap} · recency ${s.recency}\n`,
+      `       doors ${s.doorOverlap} · direction ${s.directionComplement} · industry ${s.industryOverlap} · function ${s.laneOverlap} · city ${s.sameCity} · recency ${s.recency}\n`,
     );
     if (card.profile.referCompanies.length) {
       process.stdout.write(`       can open: ${card.profile.referCompanies.join(', ')}\n`);

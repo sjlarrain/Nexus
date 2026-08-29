@@ -114,3 +114,25 @@ automatically — so it was removed. Only composites belong in that file.
 (`scripts/deploy-rules.ts` returns PERMISSION_DENIED). Granting it *Firebase Rules
 Admin* and *Cloud Datastore Index Admin* would make deploys work headlessly in CI.
 **Decided by:** Owner authenticated; Claude deployed.
+
+## 2026-08-28 — Product decisions (owner)
+**Deck scope:** nationwide, with a same-city scoring bonus so local people surface
+first. Rationale: referrals work remotely, but a coffee does not — this keeps the deck
+full while putting people you can actually meet on top.
+
+**LinkedIn Connect:** stubbed behind a feature flag with fixture data. It fills the
+URL field, imports one education entry, and flips the label to "Imported from
+LinkedIn · Refresh" exactly as spec §2 describes. Real OAuth needs an approved
+LinkedIn app, which is not a same-day process; the UI does not change when it lands.
+
+**Venues:** a seeded list of real San Francisco cafes, stored in `venues/`. No API
+key, no billing, no rate limits. Google Places remains the upgrade path (BACKLOG
+E10.1) and only the loader changes.
+
+**Reply rate:** replies ÷ conversations started with you, over the last 30 days —
+"of the people who messaged you first, how many did you answer". It is the trust
+signal the product sells, and it does not punish a user for matches where neither
+side spoke.
+
+**Undo swipe:** cut from v1 (Claude's default, not contradicted). Revisit after the
+demo.

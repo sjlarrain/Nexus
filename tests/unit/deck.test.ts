@@ -22,6 +22,7 @@ function candidate(uid: string, overrides: Partial<Profile> = {}, lastActiveAt =
 
 const viewer = profile({
   direction: 'looking',
+  city: 'San Francisco, CA',
   targetCompanies: ['Notion', 'Linear', 'Stripe'],
   industries: ['Software', 'Fintech'],
   lanes: ['Product Design'],
@@ -87,6 +88,23 @@ describe('scoring', () => {
     expect(explain(viewer, candidate('a', {}, null as unknown as number), NOW).recency).toBe(0);
   });
 
+  it('rewards someone in the same city', () => {
+    const local = candidate('a', { city: 'San Francisco, CA' });
+    const remote = candidate('b', { city: 'Austin, TX' });
+    expect(explain(viewer, local, NOW).sameCity).toBe(WEIGHTS.sameCity);
+    expect(explain(viewer, remote, NOW).sameCity).toBe(0);
+  });
+
+  it('does not reward a city match when either side is blank', () => {
+    expect(explain(profile({ city: '' }), candidate('a', { city: '' }), NOW).sameCity).toBe(0);
+  });
+
+  it('ranks a door above a shared city, since a referral beats convenience', () => {
+    const doorFar = explain(viewer, candidate('a', { referCompanies: ['Notion'], city: 'Austin, TX' }), NOW);
+    const noDoorLocal = explain(viewer, candidate('b', { city: 'San Francisco, CA' }), NOW);
+    expect(doorFar.total).toBeGreaterThan(noDoorLocal.total);
+  });
+
   it('totals its own parts', () => {
     const score = explain(
       viewer,
@@ -94,7 +112,12 @@ describe('scoring', () => {
       NOW,
     );
     expect(score.total).toBe(
-      score.doorOverlap + score.directionComplement + score.industryOverlap + score.laneOverlap + score.recency,
+      score.doorOverlap +
+        score.directionComplement +
+        score.industryOverlap +
+        score.laneOverlap +
+        score.sameCity +
+        score.recency,
     );
   });
 });

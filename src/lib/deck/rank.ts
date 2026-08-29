@@ -31,6 +31,7 @@ export type ScoreBreakdown = {
   directionComplement: number;
   industryOverlap: number;
   laneOverlap: number;
+  sameCity: number;
   recency: number;
   total: number;
 };
@@ -43,6 +44,12 @@ export const WEIGHTS = {
   directionComplement: 10,
   perIndustry: 3,
   perLane: 4,
+  /**
+   * Deck is nationwide, but a coffee is not: someone in your city can actually meet
+   * you (docs/decisions.md, 2026-08-28). Weighted below a door match on purpose —
+   * a referral that matters beats a convenient one.
+   */
+  sameCity: 7,
   /** Active today scores full marks, decaying to zero over two weeks. */
   recencyMax: 6,
   recencyWindowDays: 14,
@@ -65,6 +72,13 @@ function intersectionSize(a: readonly string[], b: readonly string[]): number {
 export function directionsComplement(mine: Direction, theirs: Direction): boolean {
   if (mine === 'both' || theirs === 'both') return true;
   return mine !== theirs;
+}
+
+/** Compares the stored "City, ST" values. Empty on either side never counts. */
+export function sameCity(mine: string, theirs: string): boolean {
+  const a = mine.trim().toLowerCase();
+  const b = theirs.trim().toLowerCase();
+  return a.length > 0 && a === b;
 }
 
 function recencyScore(lastActiveAt: number | null, now: number): number {
@@ -90,6 +104,7 @@ export function explain(viewer: Profile, candidate: Candidate, now = Date.now())
   const industry =
     intersectionSize(candidate.profile.industries, viewer.industries) * WEIGHTS.perIndustry;
   const lane = intersectionSize(candidate.profile.lanes, viewer.lanes) * WEIGHTS.perLane;
+  const city = sameCity(viewer.city, candidate.profile.city) ? WEIGHTS.sameCity : 0;
   const recency = recencyScore(candidate.lastActiveAt, now);
 
   return {
@@ -97,8 +112,9 @@ export function explain(viewer: Profile, candidate: Candidate, now = Date.now())
     directionComplement: direction,
     industryOverlap: industry,
     laneOverlap: lane,
+    sameCity: city,
     recency,
-    total: doors + direction + industry + lane + recency,
+    total: doors + direction + industry + lane + city + recency,
   };
 }
 

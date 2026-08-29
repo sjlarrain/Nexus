@@ -70,6 +70,7 @@ src/app/         Next.js routes (UI + route handlers)
 src/lib/         domain logic, framework-free where possible
 src/lib/schemas/ Zod schemas = the single definition of every entity
 src/lib/firebase/  client SDK init
+src/components/  shared UI; src/components/ui is the primitive layer
 src/server/      admin SDK, privileged services, never imported by client code
 firestore.rules  authorization lives here, not only in the app layer
 tests/           unit + rules + integration tests

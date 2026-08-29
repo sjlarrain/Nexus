@@ -202,10 +202,15 @@ mock shows that the backend cannot yet supply.
 
 - [x] `E15.1` Design tokens extracted to `src/app/tokens.css` + `globals.css`;
       fonts self-hosted via `next/font`. Mock overrides spec §5 on palette and type
-- [ ] `E15.2` Primitives: card, multi-select grid, input, primary button (disabled is
-      ink at 28% with the validation message as the label), 44px touch targets
+- [x] `E15.2` Primitives in `src/components/ui`: card, multi-select grid, input,
+      chips, badges, primary button (disabled = ink 28% with the gate's validation
+      message as its label), 44px touch targets
 - [ ] `E15.3` Onboarding steps 0-5 wired to E3
-- [ ] `E15.4` Deck with drag thresholds dx ±105 / dy −110, filters sheet, activity feed
+- [~] `E15.4` Deck (mock 1a): drag thresholds dx ±105 / dy −110 done, exit animation,
+      photo stepper, activity feed. **Filters sheet still to build** — the chips are
+      display-only
+- [x] `E15.8` Match moment (mock 1d, coffee-first) — chosen slot carries into the
+      café screen
 - [ ] `E15.5` Likes, match moment, chat with suggested replies, booking, profile
 - [ ] `E15.6` `flex-shrink: 0` on fixed-proportion blocks in scrolling step columns
       (spec §6 — the column squashes cards otherwise)

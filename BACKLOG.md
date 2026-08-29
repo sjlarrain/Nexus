@@ -182,7 +182,7 @@ Covers spec §4 (profile object) and §3 (gating).
 ## E14 — Delivery
 
 - [ ] `E14.1` Vercel project, preview deploys per branch, env vars per environment
-- [ ] `E14.2` Firestore rules and indexes deployed from CI, not by hand
+- [x] `E14.2` Firestore rules and indexes deployed from CI, not by hand
 - [ ] `E14.3` Error tracking and structured server logs
 - [ ] `E14.4` `README.md`: setup, emulators, seeding, deploy
 - [ ] `E14.5` Smoke tests against a preview deploy

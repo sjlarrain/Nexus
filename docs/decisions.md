@@ -103,3 +103,14 @@ service account can read and write **data** but cannot manage **configuration**.
 reads are denied. Server route handlers use the Admin SDK and are unaffected.
 Queries needing composite indexes are sorted in memory instead.
 **Decided by:** Claude, flagged to the owner.
+
+## 2026-08-28 — Rules and indexes deployed
+**Decision:** Deployed via `npx firebase deploy` after the owner ran `firebase login`.
+Composite indexes: `likes(priority, createdAt)` and `matches(participants, lastMessage.at)`.
+**Note:** the original `firestore.indexes.json` also declared a single-field index on
+`messages.createdAt`. Firestore rejects those — single-field indexes are created
+automatically — so it was removed. Only composites belong in that file.
+**Still true:** the service account itself cannot deploy rules or indexes
+(`scripts/deploy-rules.ts` returns PERMISSION_DENIED). Granting it *Firebase Rules
+Admin* and *Cloud Datastore Index Admin* would make deploys work headlessly in CI.
+**Decided by:** Owner authenticated; Claude deployed.

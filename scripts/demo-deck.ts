@@ -84,9 +84,9 @@ async function showLikes(): Promise<void> {
 
   process.stdout.write(`LIKES waiting for ${DEMO_VIEWER_UID}: ${snapshot.size}\n`);
 
-  // Sorted here rather than in the query: an inbox is small, and ordering by
-  // priority then createdAt in Firestore needs a composite index we cannot deploy
-  // yet (see docs/decisions.md — the service account lacks index admin rights).
+  // Sorted here rather than in the query: an inbox is small enough that the round
+  // trip costs more than the sort. The composite index exists either way, so
+  // GET /api/likes can order in Firestore once paging matters.
   const likes = snapshot.docs
     .map((doc) => doc.data() as { fromUid: string; priority: boolean; createdAt: number })
     .sort((a, b) => Number(b.priority) - Number(a.priority) || b.createdAt - a.createdAt);

@@ -1,0 +1,11 @@
+# Belt and braces: the Vercel CLI already skips .gitignore'd files, but a local env
+# file uploaded into a build would be read at runtime and its secrets would win over
+# the dashboard's. Never let one travel.
+.env
+.env.*
+!.env.example
+
+# Not needed to build or run the app.
+docs/
+tests/
+emulator-data/

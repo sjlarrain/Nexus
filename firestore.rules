@@ -1,0 +1,121 @@
+rules_version = '2';
+
+// Authorization for Warm Intro. See docs/architecture.md section 3 for the model.
+//
+// Principle: reads that power realtime UI go direct from the client; every write
+// that could become a lie about *another* user goes through a route handler using
+// the Admin SDK, which bypasses these rules. So most write paths here are `false`.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function published() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.onboarding.completed == true;
+    }
+
+    function isParticipant(matchId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/matches/$(matchId))
+        && request.auth.uid in get(/databases/$(database)/documents/matches/$(matchId)).data.participants;
+    }
+
+    // Fields a client may never set on itself: they are derived or moderated.
+    function noPrivilegedFields() {
+      return !request.resource.data.diff(resource.data).affectedKeys()
+        .hasAny(['stats', 'onboarding', 'createdAt', 'flags', 'blockedBy']);
+    }
+
+    // --- profiles -----------------------------------------------------------
+    // The card surface. Any published user can read any other published user;
+    // that is the product. Nothing secret lives here.
+    match /users/{uid} {
+      allow get, list: if published() || isSelf(uid);
+      allow create: if isSelf(uid);
+      allow update: if isSelf(uid) && noPrivilegedFields();
+      allow delete: if false; // account deletion goes through the server
+
+      // Email, auth providers, tokens. Owner-only, and even then read-only:
+      // the server writes it.
+      match /private/{docId} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
+    }
+
+    // --- swipes -------------------------------------------------------------
+    // Server-only, both ways. A client that could read swipes could work out who
+    // passed on them.
+    match /swipes/{swipeId} {
+      allow read, write: if false;
+    }
+
+    // --- inbound likes ------------------------------------------------------
+    // Read your own inbox so the Likes screen can subscribe. Writes are server-side
+    // (they are the mirror of someone else's swipe).
+    match /inbox/{uid} {
+      allow read: if isSelf(uid);
+      allow write: if false;
+
+      match /likes/{fromUid} {
+        allow read: if isSelf(uid);
+        allow write: if false;
+      }
+    }
+
+    // --- matches and chat ---------------------------------------------------
+    match /matches/{matchId} {
+      allow get, list: if signedIn() && request.auth.uid in resource.data.participants;
+      allow create, delete: if false;
+      // lastMessage / booking are denormalised by the server.
+      allow update: if false;
+
+      match /messages/{messageId} {
+        allow read: if isParticipant(matchId);
+
+        // Messages are the one client write path in chat: cheap, high volume, and
+        // fully checkable here. Everything else about a match is server-written.
+        allow create: if isParticipant(matchId)
+          && request.resource.data.from == request.auth.uid
+          && request.resource.data.kind == 'text'
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.createdAt == request.time;
+
+        allow update, delete: if false;
+      }
+    }
+
+    // --- bookings -----------------------------------------------------------
+    match /bookings/{bookingId} {
+      allow read: if signedIn() && request.auth.uid in resource.data.participants;
+      allow write: if false; // state machine lives on the server
+    }
+
+    // --- reference data -----------------------------------------------------
+    match /refdata/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    match /venues/{venueId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Anything not listed above is denied.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

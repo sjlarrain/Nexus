@@ -25,19 +25,39 @@ Legend: `[ ]` todo · `[~]` in progress · `[x]` done · 🔒 blocked on the own
 
 ## E1 — Firebase & environment
 
-- [ ] `E1.1` 🔒 Create Firebase project(s) — one project with emulator-only local dev,
-      or separate dev/prod projects? Owner call.
+- [ ] `E1.1` 🔒 Owner creates one Firebase project (demo/prod) and hands over the web
+      config + a service-account key. Local dev runs on emulators only.
 - [ ] `E1.2` Client SDK init (`src/lib/firebase/client.ts`), singleton-safe under HMR
 - [ ] `E1.3` Admin SDK init (`src/server/firebase/admin.ts`) from a base64 service
       account env var; never a JSON file on disk
 - [ ] `E1.4` Firebase Emulator Suite (auth, firestore, storage) + `npm run dev:emul`
-- [ ] `E1.5` Seed script: fixture users including Jordan Reyes and Daniel Okafor from
-      the spec demo data, plus reference data
-- [ ] `E1.6` `firestore.indexes.json` committed and deployed from CI
+- [ ] `E1.5` `firestore.indexes.json` committed and deployed from CI
+
+## E1b — Simulated data toolkit (build-a-thon priority)
+
+The demo lives or dies on the deck feeling full. This gets its own epic.
+
+- [ ] `E1b.1` Fixture generator: N realistic US professionals — names, headlines,
+      companies, roles, industries, cities, schools, doors, interests, prompts —
+      coherent enough that a card reads like a real person
+- [ ] `E1b.2` Placeholder photos for all three slots, deterministic per user
+- [ ] `E1b.3` `npm run seed` — targets the emulator by default, the live project
+      behind an explicit `--project` flag and a confirmation
+- [ ] `E1b.4` `npm run seed:reset` — wipe and reseed from scratch
+- [ ] `E1b.5` Scenario seeds: pending inbound likes for the demo viewer, a live match
+      with message history, a match with a cafe named in the thread, a booked coffee —
+      one per screen in spec §1, so every screen has something to show
+- [ ] `E1b.6` Demo viewer (Jordan Reyes) and counterpart (Daniel Okafor) per spec
+      demo data, with stable ids for demoing
+- [ ] `E1b.7` Emulator export/import snapshots committed, so a known-good demo state
+      is one command away
+- [ ] `E1b.8` Small admin script to inspect and edit any seeded record without the
+      Firebase console
 
 ## E2 — Auth (onboarding step 0)
 
-- [ ] `E2.1` Google sign-in + email sign-in via Firebase Auth
+- [ ] `E2.1` Google sign-in + email/password sign-in via Firebase Auth, including
+      password rules and a reset flow
 - [ ] `E2.2` Session: ID token to httpOnly session cookie, verified in route handlers
 - [ ] `E2.3` `requireUser()` server helper returning a typed `AuthedUser`
 - [ ] `E2.4` On first sign-in, create `users/{uid}` shell + `users/{uid}/private/meta`
@@ -189,13 +209,13 @@ Nothing here starts until the mocks land in `docs/mocks/`.
 
 Tracked here until answered, then moved to `docs/decisions.md`.
 
-1. **Environments** — one Firebase project with emulator-only local dev, or separate
-   dev and prod projects?
-2. **Web only?** Mobile web app (PWA) for now, or is a native shell planned? It
-   changes auth and notification choices.
-3. **Venue provider** — Google Places has the best data but needs billing enabled.
-4. **LinkedIn** — v1 or stubbed behind a flag?
-5. **Deck scope** — nationwide from day one, or city-scoped so the deck feels dense?
-6. **Reply rate** — exact definition shown on the profile screen.
-7. **Undo swipe** — in scope for v1?
-8. **Email sign-in** — magic link or password?
+1. **Venue provider** — Google Places has the best data but needs billing enabled.
+   For a build-a-thon, a seeded venue list may be enough.
+2. **LinkedIn** — v1 or stubbed behind a flag?
+3. **Deck scope** — nationwide from day one, or city-scoped so the deck feels dense?
+4. **Reply rate** — exact definition shown on the profile screen.
+5. **Undo swipe** — in scope for v1?
+6. **Build-a-thon date** — when is the demo? It changes what gets cut.
+
+Answered (see [`docs/decisions.md`](docs/decisions.md)): environments, platform,
+email sign-in method.

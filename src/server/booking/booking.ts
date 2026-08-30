@@ -12,6 +12,8 @@ import type { Booking, BookingMode, Match, Message, Venue } from '@/lib/schemas/
  *
  * A three-state machine — proposed → confirmed, or cancelled from either — kept on
  * the server because both sides read it and neither can be trusted to advance it.
+ * Holding a table starts at `confirmed` and skips `proposed` entirely; see
+ * `NewBooking.hold`.
  * Every transition posts a system message into the thread, which is what makes the
  * booking visible in the conversation rather than hidden behind a tab.
  */
@@ -67,13 +69,24 @@ export async function counterpartFirstName(uid: string, matchId: string): Promis
   return parsed.success && parsed.data.first.trim().length > 0 ? parsed.data.first : 'them';
 }
 
-export async function proposeBooking(
+export type NewBooking = {
+  matchId: string;
+  mode: BookingMode;
+  venueId: string | null;
+  slots: number[];
+  /**
+   * In person, the person asking for the intro holds the table (docs/decisions.md):
+   * they pick one café and one time, and the booking is created already confirmed —
+   * there is nothing left for the other side to choose, only to show up. A video
+   * call has no table to hold, so it stays propose-then-accept on two times.
+   */
+  hold: boolean;
+};
+
+export async function createBooking(
   uid: string,
-  matchId: string,
-  mode: BookingMode,
-  venueId: string | null,
-  slots: number[],
-): Promise<{ bookingId: string }> {
+  { matchId, mode, venueId, slots, hold }: NewBooking,
+): Promise<{ bookingId: string; status: Booking['status'] }> {
   const match = await requireMatch(uid, matchId);
   if (match.bookingId !== null) throw badRequest('This match already has a coffee booked.');
   if (slots.length === 0 || slots.length > 2) throw badRequest('Propose one or two times.');
@@ -81,6 +94,11 @@ export async function proposeBooking(
     throw badRequest('Those times are in the past.');
   }
   if (mode === 'in_person' && !venueId) throw badRequest('Pick a café for an in-person coffee.');
+
+  const held = slots[0];
+  if (hold && (mode !== 'in_person' || slots.length !== 1 || held === undefined)) {
+    throw badRequest('Hold a table at one café, for one time.');
+  }
 
   const db = adminDb();
 
@@ -93,6 +111,7 @@ export async function proposeBooking(
 
   const now = Date.now();
   const bookingRef = db.collection('bookings').doc();
+  const confirmed = hold && held !== undefined;
 
   const booking: Booking = {
     matchId,
@@ -100,8 +119,8 @@ export async function proposeBooking(
     mode,
     venue,
     slots: slots.map((startsAt) => ({ startsAt, durationMin: THIRTY_MINUTES })),
-    chosenSlot: null,
-    status: 'proposed',
+    chosenSlot: confirmed ? (held ?? null) : null,
+    status: confirmed ? 'confirmed' : 'proposed',
     createdBy: uid,
     createdAt: now,
     updatedAt: now,
@@ -111,10 +130,14 @@ export async function proposeBooking(
   await db.collection('matches').doc(matchId).update({ bookingId: bookingRef.id });
   await postSystemMessage(
     matchId,
-    `A 30-minute coffee was proposed${venue ? ` at ${venue.name}` : ' — video call'}.`,
+    confirmed
+      ? // No absolute time in the system line: the confirmed card right beneath it
+        // renders the slot in each reader's own timezone, which this string cannot.
+        `A table for two is held${venue ? ` at ${venue.name}` : ''}.`
+      : `A 30-minute coffee was proposed${venue ? ` at ${venue.name}` : ' — video call'}.`,
   );
 
-  return { bookingId: bookingRef.id };
+  return { bookingId: bookingRef.id, status: booking.status };
 }
 
 export async function acceptBooking(

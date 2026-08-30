@@ -778,3 +778,25 @@ matches `pending` and waits to be armed properly. `?tips=1` still replays it on 
 swipe row does not render when the deck has run out; measuring `null` used to leave
 the tour mounted with nothing to show and no way forward.
 
+## 2026-08-30 — Reserving a table books it; it does not propose it
+
+**In person, the CTA now creates a `confirmed` booking on the one café and the one
+time the user picked, and hands them back to the chat** (`hold: true` →
+`createBooking`, formerly `proposeBooking`). The confirmation is a card in the
+conversation, next to the messages that led to it, which is what the owner's mock
+shows.
+
+This is a real product change, made on explicit instruction. The asker is the one
+holding the table, so there is nothing for the other side to choose — a "proposed"
+state in between was asking a question nobody needed answered. **Video calls keep
+propose-then-accept:** there is no table to hold, so two times and a confirmation from
+the other side is still the honest flow. The two paths part at the CTA and nowhere
+else.
+
+**No price, and no "paid by you".** The mock charges $24 to hold the table; there is
+still no payment provider, so the note says the table is held free and the card says
+"table for 2 held" (the earlier decision on this stands).
+
+**The system message carries no absolute time** — "A table for two is held at Blue
+Bottle Coffee." The confirmed card directly beneath it renders the slot in each
+reader's own timezone, which a frozen string in the message body cannot.

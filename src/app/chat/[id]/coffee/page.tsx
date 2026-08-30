@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import { Chip, Input, PrimaryButton, hatchClass } from '@/components/ui';
 import { BOOKING_MODES, type Booking, type BookingMode, type Venue } from '@/lib/schemas/entities';
@@ -13,9 +13,14 @@ import styles from './coffee.module.css';
  * manual search below, two time slots. A café named in the chat pins to the top
  * tagged "Mentioned in your chat".
  *
- * The screen has two faces. With no booking it proposes; with one it shows the state
+ * The screen has two faces. With no booking it books one; with one it shows the state
  * machine's next move — the other side picking a time, or you picking one. Without
  * that second face a proposal could never be accepted from the UI (BACKLOG E10.4).
+ *
+ * In person and video part ways at the CTA. Reserving a table is a decision, not a
+ * question: it books the chosen café and time outright and hands the user back to the
+ * chat, where the confirmation card lives. A video call has nothing to hold, so it
+ * stays propose-then-accept (docs/decisions.md).
  *
  * Laid out after docs/mocks/planup-quick-tips.html's booking screen. Two things in
  * that mock are still not built, for the same reason MatchMoment drops its price
@@ -23,8 +28,8 @@ import styles from './coffee.module.css';
  *
  *   · prices and "for two"   — `venueSchema` carries no pricing
  *   · payment and OpenTable  — there is no payment provider and no OpenTable
- *                              integration; the flow is propose-then-accept, free,
- *                              and the note under the slots says so plainly
+ *                              integration; the table is held for free, and the note
+ *                              under the slots says so plainly
  */
 
 const MODE_LABEL: Record<BookingMode, string> = { video: 'Video call', in_person: 'In person' };
@@ -52,6 +57,7 @@ function formatSlot(startsAt: number): string {
 
 export default function CoffeePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: matchId } = use(params);
+  const router = useRouter();
   const searchParams = useSearchParams();
   const preselected = Number(searchParams.get('slot')) || null;
 
@@ -114,6 +120,34 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
       setMessage(done);
       await refresh();
     } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Reserving a table books it outright, so this screen has nothing left to say: the
+   * confirmation belongs in the conversation, next to the messages that led to it
+   * (mock: the chat's "Coffee chat confirmed" card). Straight back to the thread.
+   */
+  async function holdTable(): Promise<void> {
+    setBusy(true);
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchId, mode: 'in_person', venueId, slots: [chosenSlot], hold: true }),
+      });
+      if (!response.ok) {
+        const payload: unknown = await response.json();
+        setMessage((payload as { error?: string }).error ?? 'Could not hold that table.');
+        setBusy(false);
+        return;
+      }
+      // `busy` stays set: the navigation is the end of this screen's life, and
+      // re-enabling the button first would invite a second booking.
+      router.push(`/chat/${matchId}`);
+    } catch {
+      setMessage('Could not hold that table.');
       setBusy(false);
     }
   }
@@ -269,8 +303,9 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
 
         <h1 className={styles.heading}>Book a coffee chat with {data.theirName}</h1>
         <p className={styles.sub}>
-          Thirty minutes, {mode === 'video' ? 'over video' : 'somewhere near both of you'}.{' '}
-          {data.theirName} picks one of your times and it is booked.
+          {mode === 'in_person'
+            ? `Thirty minutes, somewhere near both of you. Pick the café and the time — the table is held and ${data.theirName} just shows up.`
+            : `Thirty minutes, over video. ${data.theirName} picks one of your times and it is booked.`}
         </p>
 
         <div className={styles.modeRow} role="group" aria-label="Video call or in person">
@@ -334,20 +369,24 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
         ))}
 
         <p className={styles.note}>
-          Nothing is charged — {data.theirName} gets these times in the chat and confirms one.
+          {mode === 'in_person'
+            ? `Nothing is charged — the table is held in your name, and ${data.theirName} sees the café and the time in the chat.`
+            : `Nothing is charged — ${data.theirName} gets these times in the chat and confirms one.`}
         </p>
 
         <PrimaryButton
           className={styles.cta}
           label={mode === 'in_person' ? 'Reserve table' : 'Send these times'}
-          disabled={(mode === 'in_person' && !venueId) || busy}
-          onClick={() =>
-            void act(
-              { matchId, mode, venueId: mode === 'in_person' ? venueId : null, slots: data.suggestedSlots },
-              '/api/bookings',
-              'Sent. They pick one of the two times.',
-            )
-          }
+          disabled={(mode === 'in_person' && (!venueId || chosenSlot === null)) || busy}
+          onClick={() => {
+            if (mode === 'in_person') void holdTable();
+            else
+              void act(
+                { matchId, mode, venueId: null, slots: data.suggestedSlots },
+                '/api/bookings',
+                'Sent. They pick one of the two times.',
+              );
+          }}
         />
 
         <p className={styles.footnote}>Either of you can cancel this from here.</p>

@@ -271,9 +271,10 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                     </p>
                     <p className={styles.confirmedWhere}>
                       {/* "Table for 2" is always literally true — a booking is always
-                          exactly the two matched participants — not a reservation claim. */}
+                          exactly the two matched participants. No price and no "paid
+                          by you": there is no payment provider behind this. */}
                       {confirmedBooking.venue
-                        ? `${confirmedBooking.venue.name} · table for 2`
+                        ? `${confirmedBooking.venue.name} · table for 2 held`
                         : 'Video call'}
                     </p>
                     {chosenSlot !== null ? (

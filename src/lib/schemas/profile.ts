@@ -20,6 +20,44 @@ import {
 
 const trimmed = (max: number) => z.string().trim().max(max);
 
+/**
+ * Backward compatibility for documents written before `industry` and `lane` became
+ * multi-select.
+ *
+ * A stored profile is validated on every read — `/api/me`, the deck loader, publish —
+ * so a schema change that is not tolerant here does not fail loudly at the write it
+ * came from. It fails much later, on someone else's sign-in, as a 400 on a screen
+ * that has nothing to do with it. So the scalar shape is lifted into a one-item array
+ * on the way in, and the document heals on its owner's next save.
+ */
+const scalarOrList = (max: number, cap: number) =>
+  z.preprocess(
+    (value) => {
+      if (value === null || value === undefined) return [];
+      if (typeof value !== 'string') return value;
+      const entry = value.trim();
+      return entry ? [entry] : [];
+    },
+    z.array(trimmed(max).min(1)).max(cap),
+  );
+
+/**
+ * The five old years bands mapped onto the three the PM asked for. Same reasoning as
+ * `scalarOrList`: a stored value that no longer exists in the enum must not lock its
+ * owner out of their own profile.
+ */
+const LEGACY_YEARS_BANDS: Record<string, (typeof YEARS_BANDS)[number]> = {
+  '0-1': '0-5',
+  '2-3': '0-5',
+  '4-6': '5-10',
+  '7-10': '5-10',
+};
+
+const yearsBand = z.preprocess(
+  (value) => (typeof value === 'string' ? (LEGACY_YEARS_BANDS[value] ?? value) : value),
+  z.union([z.enum(YEARS_BANDS), z.literal('')]),
+);
+
 export const photoSchema = z.object({
   slot: z.enum(PHOTO_SLOTS),
   url: z.string().url(),
@@ -62,13 +100,13 @@ export const profileSchema = z.object({
    * Sectors the user works in. Multi-select since the PM's onboarding revision, so
    * this is an array of GICS sector names plus anything typed into "Other".
    */
-  industry: z.array(trimmed(80).min(1)).max(LIMITS.industries),
+  industry: scalarOrList(80, LIMITS.industries),
   /**
    * "Function" in the UI; `lane` in the spec's data model. Multi-select, and the
    * options offered are the positions belonging to the selected `industry` values.
    */
-  lane: z.array(trimmed(80).min(1)).max(LIMITS.roles),
-  years: z.union([z.enum(YEARS_BANDS), z.literal('')]),
+  lane: scalarOrList(80, LIMITS.roles),
+  years: yearsBand,
   /** Student inline fallback when no step-1 school exists. */
   school2: trimmed(120),
   gradYear: z.union([z.string().regex(/^\d{4}$/), z.literal('')]),
@@ -81,7 +119,7 @@ export const profileSchema = z.object({
   lanes: z.array(trimmed(80).min(1)).max(LIMITS.roles),
   targetCompanies: z.array(trimmed(120).min(1)),
 
-  // --- step 4: a little color (skippable) ---
+  // --- step 4: a little color ---
   interests: z.array(trimmed(60).min(1)).max(LIMITS.interests),
   openTo: z.array(z.enum(OPEN_TO)),
   bio: trimmed(LIMITS.bioChars),

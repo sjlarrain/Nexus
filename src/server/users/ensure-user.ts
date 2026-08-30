@@ -57,9 +57,8 @@ export async function ensureUserDocument(auth: AuthedUser): Promise<EnsureResult
 }
 
 /**
- * Where to send someone after sign-in: back into onboarding at the step they left,
- * or to the deck once published (BACKLOG E2.5).
+ * Where to send someone after sign-in. The rule itself lives in
+ * `@/lib/onboarding/landing` so it can be unit tested; re-exported here because both
+ * callers already import this module.
  */
-export function landingRouteFor(user: Pick<UserRecord, 'onboarding'>): string {
-  return user.onboarding.completed ? '/deck' : `/onboarding/${user.onboarding.step}`;
-}
+export { landingRouteFor } from '@/lib/onboarding/landing';

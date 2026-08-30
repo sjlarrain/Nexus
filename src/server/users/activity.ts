@@ -90,7 +90,7 @@ export async function loadActivity(uid: string): Promise<Activity> {
             {
               matchId: booking.matchId,
               name,
-              venueName: booking.venue.name,
+              venueName: booking.venue?.name ?? null,
               status: booking.status,
               updatedAt: booking.updatedAt,
             },

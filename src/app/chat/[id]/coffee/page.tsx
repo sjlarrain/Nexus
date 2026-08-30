@@ -5,27 +5,29 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import { Chip, Input, PrimaryButton, hatchClass } from '@/components/ui';
-import type { Booking, Venue } from '@/lib/schemas/entities';
+import { BOOKING_MODES, type Booking, type BookingMode, type Venue } from '@/lib/schemas/entities';
 import styles from './coffee.module.css';
 
 /**
- * Coffee booking (spec section 1): three nearby venues, manual search below, two time
- * slots. A café named in the chat pins to the top tagged "Mentioned in your chat".
+ * Coffee booking (spec section 1): video call or in person, three nearby venues with
+ * manual search below, two time slots. A café named in the chat pins to the top
+ * tagged "Mentioned in your chat".
  *
  * The screen has two faces. With no booking it proposes; with one it shows the state
  * machine's next move — the other side picking a time, or you picking one. Without
  * that second face a proposal could never be accepted from the UI (BACKLOG E10.4).
  *
- * Laid out after docs/mocks/planup-chat-prototype.html. Three things in that mock are
- * deliberately not built, for the same reason MatchMoment drops its price range: they
- * would be promises the app cannot keep (docs/design.md).
+ * Laid out after docs/mocks/planup-quick-tips.html's booking screen. Two things in
+ * that mock are still not built, for the same reason MatchMoment drops its price
+ * range: they would be promises the app cannot keep (docs/design.md).
  *
  *   · prices and "for two"   — `venueSchema` carries no pricing
- *   · video call / in person — `bookingSchema` has no mode, and a toggle that changed
- *                              nothing would be a lie about what got booked
  *   · payment and OpenTable  — there is no payment provider and no OpenTable
- *                              integration; the flow is propose-then-accept, free
+ *                              integration; the flow is propose-then-accept, free,
+ *                              and the note under the slots says so plainly
  */
+
+const MODE_LABEL: Record<BookingMode, string> = { video: 'Video call', in_person: 'In person' };
 
 type VenueRow = { venue: Venue; mentionedInChat: boolean };
 type Existing = (Booking & { id: string }) | null;
@@ -54,6 +56,7 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
   const preselected = Number(searchParams.get('slot')) || null;
 
   const [data, setData] = useState<VenuesResponse | null>(null);
+  const [mode, setMode] = useState<BookingMode>('in_person');
   const [search, setSearch] = useState('');
   const [venueId, setVenueId] = useState<string | null>(null);
   const [chosenSlot, setChosenSlot] = useState<number | null>(preselected);
@@ -177,6 +180,9 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
   /* ---------------------------------------------------------------- */
   if (booking) {
     const confirmed = booking.status === 'confirmed';
+    // "at Devoción, Williamsburg" for an in-person coffee, "over video call" for one.
+    const at = booking.venue ? `at ${booking.venue.name}` : 'over video call';
+    const label = booking.venue ? booking.venue.name : 'video call';
 
     return (
       <AppShell>
@@ -187,10 +193,10 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
           </h1>
           <p className={styles.sub}>
             {confirmed
-              ? `${booking.venue.name} — 30 minutes.`
+              ? `${label} — 30 minutes.`
               : waitingOn === 'you'
-                ? `They proposed ${booking.venue.name}. Choose one and it is booked.`
-                : `Waiting for them to pick one of your times at ${booking.venue.name}.`}
+                ? `They proposed a coffee ${at}. Choose one and it is booked.`
+                : `Waiting for them to pick one of your times ${at}.`}
           </p>
 
           <p className={styles.kicker}>
@@ -263,37 +269,55 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
 
         <h1 className={styles.heading}>Book a coffee chat with {data.theirName}</h1>
         <p className={styles.sub}>
-          Thirty minutes, somewhere near both of you. {data.theirName} picks one of your
-          times and it is booked.
+          Thirty minutes, {mode === 'video' ? 'over video' : 'somewhere near both of you'}.{' '}
+          {data.theirName} picks one of your times and it is booked.
         </p>
 
-        <p className={styles.kicker}>Cafés near you both</p>
-        {nearby.map(venueRow)}
-
-        <div className={styles.search}>
-          <Input
-            value={search}
-            placeholder="Search a café or neighbourhood…"
-            aria-label="Search a café or neighbourhood"
-            onChange={(event) => setSearch(event.target.value)}
-          />
-          <button
-            type="button"
-            className={styles.clear}
-            disabled={search.length === 0}
-            onClick={() => setSearch('')}
-          >
-            Clear
-          </button>
+        <div className={styles.modeRow} role="group" aria-label="Video call or in person">
+          {BOOKING_MODES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={mode === option}
+              className={`${styles.modeBtn} ${mode === option ? styles.modeOn : ''}`}
+              onClick={() => setMode(option)}
+            >
+              {MODE_LABEL[option]}
+            </button>
+          ))}
         </div>
-        {term ? (
-          <p className={styles.searchHint}>
-            {searched.length === 0
-              ? `Nothing matching “${search}”.`
-              : `${searched.length} match${searched.length === 1 ? '' : 'es'}.`}
-          </p>
+
+        {mode === 'in_person' ? (
+          <>
+            <p className={styles.kicker}>Cafés near you both</p>
+            {nearby.map(venueRow)}
+
+            <div className={styles.search}>
+              <Input
+                value={search}
+                placeholder="Search a café or neighbourhood…"
+                aria-label="Search a café or neighbourhood"
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <button
+                type="button"
+                className={styles.clear}
+                disabled={search.length === 0}
+                onClick={() => setSearch('')}
+              >
+                Clear
+              </button>
+            </div>
+            {term ? (
+              <p className={styles.searchHint}>
+                {searched.length === 0
+                  ? `Nothing matching “${search}”.`
+                  : `${searched.length} match${searched.length === 1 ? '' : 'es'}.`}
+              </p>
+            ) : null}
+            {searched.map(venueRow)}
+          </>
         ) : null}
-        {searched.map(venueRow)}
 
         <p className={styles.kicker}>Slots · your local time</p>
         {data.suggestedSlots.map((slot) => (
@@ -317,10 +341,10 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
         <PrimaryButton
           className={styles.cta}
           label="Propose these times"
-          disabled={!venueId || busy}
+          disabled={(mode === 'in_person' && !venueId) || busy}
           onClick={() =>
             void act(
-              { matchId, venueId, slots: data.suggestedSlots },
+              { matchId, mode, venueId: mode === 'in_person' ? venueId : null, slots: data.suggestedSlots },
               '/api/bookings',
               'Sent. They pick one of the two times.',
             )

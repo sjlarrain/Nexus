@@ -269,18 +269,35 @@
   color: var(--ink-2);
 }
 
-/* The mock offers "Add to calendar" and "Reschedule". Calendar export does not
-   exist yet, and rescheduling is the booking screen, so the card links there once
-   rather than promising two things it cannot both do (docs/design.md). */
-.confirmedAction {
-  display: inline-block;
+/* "Add to calendar" (a real Google Calendar link) and "Reschedule" (cancels, then
+   drops them on the propose form) — the mock's two actions, both genuine. */
+.confirmedActions {
+  display: flex;
+  gap: 8px;
   margin-top: 11px;
+}
+
+.confirmedAction,
+.confirmedActionGhost {
   padding: 8px 12px;
   border-radius: 9px;
-  background: var(--ink);
-  color: var(--ink-inv);
   font-size: 11.5px;
   font-weight: 500;
+}
+
+.confirmedAction {
+  background: var(--ink);
+  color: var(--ink-inv);
+}
+
+.confirmedActionGhost {
+  border: 1px solid var(--green-ink);
+  color: var(--green-ink);
+  background: transparent;
+}
+
+.confirmedActionGhost:disabled {
+  opacity: var(--disabled-opacity);
 }
 
 /* --- starters (mock: the dashed opener chips) ------------------------- */

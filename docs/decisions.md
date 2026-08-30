@@ -638,3 +638,28 @@ Claude Code browser pane itself — so a rAF-deferred `setRect` can hang indefin
 the effect body" rule without depending on the tab being visible. Relatedly, the ref
 lookup table passed to `TipsTour` is now `useMemo`'d in the deck page — an unmemoized
 object literal was retriggering the measurement effect on every unrelated re-render.
+
+## 2026-08-30 — Video call joins in person; the mock's payment claims still do not
+
+**`bookingSchema` gained a real `mode` field** (`'in_person' | 'video'`), and `venue`
+is now nullable rather than always required. This was the one item from the earlier
+"not built" list (2026-08-29 chat entry) that was a genuine gap rather than a promise
+the app cannot keep — a toggle that only picked a mode and stored it is real, unlike
+one that claimed to hold a table. Proposing a video call skips venue selection
+entirely on the booking screen; every place that read `booking.venue.name` (the
+confirmed card, the activity feed, the system messages) now branches on it being null
+instead.
+
+**Prices, "for two", and the OpenTable payment flow are still not built.** The owner
+confirmed (asked directly, given the mock shows "$24 paid by you" in the chat and "You
+pay $24 now to hold the table") that the visuals should be matched without the charge:
+no price anywhere, and the CTAs read "Propose these times" / "Confirm this time" —
+never a claim that money moved. `venueSchema` still carries no pricing.
+
+**The confirmed-coffee card gets its two actions back: "Add to calendar" and
+"Reschedule."** The earlier entry deferred both because building only one of the
+mock's two actions read as arbitrary. "Add to calendar" opens a prefilled Google
+Calendar link — no .ics export, but a genuine calendar event once added, built in
+`src/lib/booking/calendar.ts`. "Reschedule" cancels the booking through the existing
+state machine and pushes straight to the propose screen, rather than just linking to
+"see the details" as before.

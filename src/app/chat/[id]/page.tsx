@@ -2,6 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import AppShell from '@/components/AppShell';
@@ -9,6 +10,7 @@ import { Input, hatchClass } from '@/components/ui';
 import { firebaseAuth, firebaseDb } from '@/lib/firebase/client';
 import { headlineFor, suggest } from '@/lib/chat/suggest';
 import { shortDate } from '@/lib/chat/when';
+import { googleCalendarUrl } from '@/lib/booking/calendar';
 import type { Booking, Message, Venue } from '@/lib/schemas/entities';
 import type { Card } from '@/lib/cards/card';
 import styles from '../chat.module.css';
@@ -45,12 +47,14 @@ function formatSlot(startsAt: number): string {
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: matchId } = use(params);
+  const router = useRouter();
 
   const [thread, setThread] = useState<Thread | null>(null);
   const [live, setLive] = useState<(Message & { id: string })[] | null>(null);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
   const [me, setMe] = useState<string | null>(null);
   // The mock lets the starter row be dismissed; it comes back on the next visit.
   const [startersHidden, setStartersHidden] = useState(false);
@@ -166,6 +170,27 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
+  /** Cancels the confirmed coffee, then drops them straight onto the propose form —
+      "reschedule" means picking a new time, not just seeing the old one is gone. */
+  async function reschedule(bookingId: string): Promise<void> {
+    setRescheduling(true);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      });
+      if (!response.ok) {
+        const body: unknown = await response.json();
+        setError((body as { error?: string }).error ?? 'Could not reschedule that.');
+        return;
+      }
+      router.push(`/chat/${matchId}/coffee`);
+    } finally {
+      setRescheduling(false);
+    }
+  }
+
   if (error) {
     return (
       <AppShell>
@@ -231,20 +256,47 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             ),
           )}
 
-          {thread.booking && thread.booking.status === 'confirmed' ? (
-            <div className={styles.confirmed}>
-              <span className={styles.confirmedKicker}>Coffee chat confirmed</span>
-              <p className={styles.confirmedWhen}>
-                {thread.booking.chosenSlot === null
-                  ? 'Time to be picked'
-                  : formatSlot(thread.booking.chosenSlot)}
-              </p>
-              <p className={styles.confirmedWhere}>{thread.booking.venue.name}</p>
-              <Link href={`/chat/${matchId}/coffee`} className={styles.confirmedAction}>
-                See the details
-              </Link>
-            </div>
-          ) : null}
+          {thread.booking && thread.booking.status === 'confirmed'
+            ? (() => {
+                const confirmedBooking = thread.booking;
+                const chosenSlot = confirmedBooking.chosenSlot;
+                return (
+                  <div className={styles.confirmed}>
+                    <span className={styles.confirmedKicker}>Coffee chat confirmed</span>
+                    <p className={styles.confirmedWhen}>
+                      {chosenSlot === null ? 'Time to be picked' : formatSlot(chosenSlot)}
+                    </p>
+                    <p className={styles.confirmedWhere}>
+                      {confirmedBooking.venue ? confirmedBooking.venue.name : 'Video call'}
+                    </p>
+                    {chosenSlot !== null ? (
+                      <div className={styles.confirmedActions}>
+                        <a
+                          href={googleCalendarUrl({
+                            startsAt: chosenSlot,
+                            withName: thread.counterpart.name.split(' ')[0] ?? 'them',
+                            where: confirmedBooking.venue?.name ?? null,
+                          })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.confirmedAction}
+                        >
+                          Add to calendar
+                        </a>
+                        <button
+                          type="button"
+                          disabled={rescheduling}
+                          className={styles.confirmedActionGhost}
+                          onClick={() => void reschedule(confirmedBooking.id)}
+                        >
+                          {rescheduling ? 'Rescheduling…' : 'Reschedule'}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()
+            : null}
         </div>
 
         {suggestions.length > 0 && !startersHidden ? (

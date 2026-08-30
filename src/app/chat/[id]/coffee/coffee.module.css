@@ -20,6 +20,34 @@
   margin: 0 0 18px;
 }
 
+/* Video call vs in person — a two-segment switch, from the quick-tips mock. */
+.modeRow {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 4px 0 18px;
+  border-radius: 13px;
+  background: var(--paper-2);
+}
+
+.modeBtn {
+  flex: 1 1 0;
+  min-height: 38px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.modeOn {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
 /* The mock labels each section with a mono kicker rather than a heading. */
 .kicker {
   font-family: var(--mono);

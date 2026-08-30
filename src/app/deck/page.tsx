@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import ActivityStrip from './activity-strip';
 import MatchMoment from '@/components/MatchMoment';
 import SwipeCard, { SwipeActions, deckClass, emptyClass } from '@/components/SwipeCard';
+import TipsTour, { type TourTargets } from '@/components/TipsTour';
 import FiltersSheet, {
   NO_FILTERS,
   filterSummary,
@@ -38,6 +39,16 @@ export default function DeckPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<DeckFilterState>(NO_FILTERS);
   const [myCity, setMyCity] = useState('');
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const filtersButtonRef = useRef<HTMLSpanElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  // Memoized so TipsTour's measurement effect isn't retriggered by every unrelated
+  // re-render of this page — the ref objects themselves never change.
+  const tourTargets: TourTargets = useMemo(
+    () => ({ card: cardRef, filters: filtersButtonRef, actions: actionsRef }),
+    [],
+  );
 
   const fetchDeck = useCallback(async (): Promise<DeckCard[]> => {
     const response = await fetch(`/api/deck${filtersToQuery(filters)}`);
@@ -144,7 +155,9 @@ export default function DeckPage() {
           <PillButton dot onClick={() => setShowActivity((open) => !open)}>
             Activity
           </PillButton>
-          <PillButton onClick={() => setShowFilters(true)}>Filters</PillButton>
+          <span ref={filtersButtonRef} style={{ display: 'inline-flex' }}>
+            <PillButton onClick={() => setShowFilters(true)}>Filters</PillButton>
+          </span>
         </>
       }
     >
@@ -159,7 +172,7 @@ export default function DeckPage() {
         ))}
       </div>
 
-      <div className={deckClass}>
+      <div className={deckClass} ref={cardRef}>
         {next ? (
           <SwipeCard key={next.uid} card={next} onIntent={() => {}} interactive={false} />
         ) : null}
@@ -170,7 +183,13 @@ export default function DeckPage() {
         )}
       </div>
 
-      {top ? <SwipeActions onIntent={intent} disabled={leaving !== null} /> : null}
+      {top ? (
+        <div ref={actionsRef}>
+          <SwipeActions onIntent={intent} disabled={leaving !== null} />
+        </div>
+      ) : null}
+
+      <TipsTour targets={tourTargets} />
 
       {showFilters ? (
         <FiltersSheet

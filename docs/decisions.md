@@ -612,3 +612,29 @@ list, same deviation as before, new presentation.
 **"Any college" joins the summary row above the deck**, alongside "Any industry", "Any
 role" and "Nationwide" — it was the one group `filterSummary()` only showed once
 non-empty, which is why the owner's screenshot of the row never had it.
+
+## 2026-08-30 — First-run tour, spotlight sized to a real screen not the mock's frame
+
+**Built `TipsTour` from `PlanUp - Quick Tips.html`'s three-step tour** (the card,
+Filters, then the swipe row) as a spotlight ring over the real element plus a bottom
+sheet, not a callout beside it. The mock's callout sits next to the spot with a
+pointing arrow, sized to fit the gap its fixed 382×812 frame leaves; step 1's spot is
+the whole deck card, which on a real phone can run edge to edge and leaves no such
+gap — a callout that hugs the spot has nowhere to go. A bottom sheet (the same pattern
+Filters and Activity already use) sidesteps the problem entirely: the spotlight still
+points at the right element regardless of its size, and the sheet never fights it for
+space.
+
+**Storage is `localStorage`, not a profile field.** There is no per-account "seen the
+tour" flag, and adding one for a three-step tooltip is more state than the feature is
+worth — a blocked store (private browsing) just counts as seen rather than nagging
+every load. "Replay quick tips" on the profile screen (the mock's unwired link) sends
+`/deck?tips=1`, which forces the tour open regardless of the stored flag.
+
+**The measurement effect defers via `setTimeout`, not `requestAnimationFrame`.**
+`rAF` never fires while a tab is backgrounded — confirmed while building this, in the
+Claude Code browser pane itself — so a rAF-deferred `setRect` can hang indefinitely.
+`setTimeout(fn, 0)` still satisfies the same "don't call setState synchronously inside
+the effect body" rule without depending on the tab being visible. Relatedly, the ref
+lookup table passed to `TipsTour` is now `useMemo`'d in the deck page — an unmemoized
+object literal was retriggering the measurement effect on every unrelated re-render.

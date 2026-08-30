@@ -183,6 +183,19 @@
   opacity: var(--disabled-opacity);
 }
 
+.replayTips {
+  display: block;
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.replayTips:hover {
+  color: var(--ink-2);
+}
+
 .rate {
   display: flex;
   align-items: baseline;

@@ -187,6 +187,10 @@ export default function ProfilePage() {
           </button>
         </div>
 
+        <Link href="/deck?tips=1" className={styles.replayTips}>
+          Replay quick tips
+        </Link>
+
         <p className={styles.photoCount}>
           {card.photos.length} of {LIMITS.photos} photos · {card.tags.length} tags on your card
         </p>

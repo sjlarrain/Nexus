@@ -3,12 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
-import { Eyebrow, Input, PrimaryButton } from '@/components/ui';
+import { Input, PrimaryButton } from '@/components/ui';
 import {
   authErrorMessage,
   resetPassword,
   signInWithEmail,
-  signInWithGoogle,
   signUpWithEmail,
 } from '@/lib/firebase/auth-client';
 import styles from './signin.module.css';
@@ -16,6 +15,10 @@ import styles from './signin.module.css';
 /**
  * Onboarding step 0 (spec section 2). Shares the one-question-per-screen frame of
  * mock 1g, since it is the first step of the same flow.
+ *
+ * Email and password is the only way in: the Google button is off until the OAuth
+ * consent screen is approved. `signInWithGoogle` is deliberately left in
+ * `auth-client` so restoring it is one block of JSX (docs/decisions.md).
  */
 export default function SignInPage() {
   const router = useRouter();
@@ -50,27 +53,12 @@ export default function SignInPage() {
         <span className={styles.brandBeta}>BETA</span>
       </span>
 
-      <h1 className={styles.heading}>
-        {signingIn ? 'Welcome back.' : 'Let us build your card.'}
-      </h1>
+      <h1 className={styles.heading}>{signingIn ? 'Welcome back.' : 'Let us build your card.'}</h1>
       <p className={styles.sub}>
         {signingIn
           ? 'Referrals work best between people who have actually met.'
           : 'Three photos and a few questions. About four minutes.'}
       </p>
-
-      <button
-        type="button"
-        className={styles.google}
-        disabled={busy}
-        onClick={() => void run(signInWithGoogle)}
-      >
-        Continue with Google
-      </button>
-
-      <div className={styles.divider}>
-        <Eyebrow>or</Eyebrow>
-      </div>
 
       <form
         onSubmit={(event) => {
@@ -151,9 +139,7 @@ export default function SignInPage() {
       ) : null}
 
       {/* Demo account, so nobody has to be told it out loud on the day. */}
-      <p className={styles.demo}>
-        demo · jordan.reyes@warmintro.test · warmintro-demo
-      </p>
+      <p className={styles.demo}>demo · jordan.reyes@warmintro.test · warmintro-demo</p>
     </main>
   );
 }

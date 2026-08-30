@@ -51,6 +51,11 @@ The demo lives or dies on the deck feeling full. This gets its own epic.
       demo data, with stable ids for demoing
 - [ ] `E1b.7` Emulator export/import snapshots committed, so a known-good demo state
       is one command away
+- [x] `E1b.9` Auto-match every published account with 75% of the seeded population,
+      plus inbound likes, so chat/likes/booking are testable from a fresh sign-up
+- [x] `E1b.10` `npm run doctor` — read-only check over the real data: every stored
+      profile parses, sign-in landing route per account, auto-match coverage.
+      `--fix` backfills. Exits non-zero on failure
 - [x] `E1b.8` Small admin script to inspect and edit any seeded record without the
       Firebase console
 

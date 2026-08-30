@@ -3,6 +3,7 @@ import { adminDb } from '@/server/firebase/admin';
 import { profilePatchSchema, profileSchema, type ProfilePatch } from '@/lib/schemas/profile';
 import { canPublish, gateForStep } from '@/lib/onboarding/gates';
 import { badRequest, forbidden, notFound } from '@/server/http/respond';
+import { ensureDemoMatches } from '@/server/users/demo-matches';
 import type { UserRecord } from '@/server/users/ensure-user';
 
 /**
@@ -87,6 +88,10 @@ export async function publishProfile(uid: string): Promise<{ publishedAt: number
       onboarding: { step: 5, completed: true, publishedAt },
       updatedAt: publishedAt,
     });
+
+  // A published card with an empty chat list is untestable. Seeding the matches here
+  // rather than in the route keeps it on every path that publishes.
+  await ensureDemoMatches(uid);
 
   return { publishedAt };
 }

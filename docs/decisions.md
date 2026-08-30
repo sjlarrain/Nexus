@@ -443,3 +443,63 @@ restoring it once the OAuth consent screen is approved is one block of JSX.
 - Multiselect caps are the existing three per field. No cap was specified.
 - Target companies on "What are we looking for" were left in place and made optional;
   the requirement named the two taxonomies to keep, not the fields to delete.
+
+## 2026-08-29 — Stored profiles are validated on read, so schema changes must be tolerant
+
+**What broke.** The GICS revision changed `industry` and `lane` from string to
+`string[]` and cut the years bands from five to three. Every profile already in
+Firestore was written in the old shape. `profileSchema.parse` runs on *read* — in
+`/api/me`, in `publishProfile`, in the deck loader — so all 47 documents began failing
+validation the moment the change deployed: `/api/me` answered `400 Invalid request.`,
+which blanked the profile and onboarding screens, and `loadDeck`'s `safeParse` quietly
+dropped every candidate. Nothing failed at the write that caused it; it failed later,
+on someone else's sign-in, on a screen with no connection to the change.
+
+**Decision.** `profileSchema` coerces the old shapes rather than rejecting them: a
+scalar `industry`/`lane` is lifted into a one-item array, and the retired years bands
+map onto the three current ones (`0-1`/`2-3` → `0-5`, `4-6`/`7-10` → `5-10`).
+Documents heal on their owner's next save.
+
+**Why coerce rather than migrate.** A backfill script has to be run, in order, against
+every environment, and a document written by an older deploy after the backfill is
+still broken. Tolerance on read has no such window. The rule this establishes: **a
+schema field that is validated on read may change shape only together with a
+preprocessor for the shape it is replacing.**
+
+**Landing route.** `landingRouteFor` no longer trusts `onboarding.completed` alone. A
+profile published under earlier gates can stop satisfying the current ones — exactly
+what happened when step 4 became mandatory — and the flag on its own dropped those
+users on the deck holding a card that could no longer be published, with no route back
+to fix it. The gates are re-run and the first failing step wins. Moved to
+`src/lib/onboarding/landing.ts` so it is unit testable; `src/server` cannot be
+imported from a test.
+
+**`npm run doctor`.** A read-only pass over the real data: does every stored profile
+still parse, where would each account land at sign-in, does each real account have
+matches. Unit tests could not have caught this — they test the schema, not the rows —
+and this is the check that would have. `--fix` backfills auto-matches. It exits
+non-zero on a failure, so it can gate a deploy.
+
+## 2026-08-29 — Every published account is auto-matched with 75% of the seeded people
+
+**Decision.** On publish — and on sign-in for accounts that published before this
+existed — a real account is matched with `DEMO_MATCH_SHARE` (75%) of the seeded,
+published population. Half of what remains arrives as an inbound like; the rest stay
+in the deck. The first five threads get an opening message.
+
+**Why.** Chat, the likes screen and booking cannot be exercised from an empty account,
+and a fresh sign-up has none of it by definition. Swiping through forty cards hoping
+for a mutual before anything can be tested is not a demo.
+
+**The share is of the whole seeded population, not of the untouched remainder.** The
+first cut filtered out anyone the account had already swiped on and then took 75% of
+what was left, which returned 27 of 42 for an account that had been demoed on — under
+the 70% asked for, with nothing to say so. People not yet swiped on come first; someone
+already passed on is pulled in only to make up the number. The rule lives in
+`src/lib/matching/demo-plan.ts`, pure and unit tested, because it was wrong once.
+
+**Safety.** Only documents carrying `seeded: true` are touched, so two real accounts
+are never matched to each other. Idempotent: match ids derive from the uid pair, and a
+`demoMatchedAt` marker short-circuits the common path. `DEMO_AUTO_MATCH=false` turns
+it off without a code change — **it must be off before the app sees users who are not
+in on the demo.**

@@ -15,6 +15,7 @@
     "seed": "tsx --conditions=react-server --env-file=.env.local scripts/seed.ts",
     "seed:reset": "tsx --conditions=react-server --env-file=.env.local scripts/seed.ts --reset",
     "check:firebase": "tsx --conditions=react-server --env-file=.env.local scripts/check-firebase.ts",
+    "doctor": "tsx --conditions=react-server --env-file=.env.local scripts/doctor.ts",
     "deploy:rules": "tsx --env-file=.env.local scripts/deploy-rules.ts",
     "demo:deck": "tsx --conditions=react-server --env-file=.env.local scripts/demo-deck.ts",
     "verify:swipe": "tsx --conditions=react-server --env-file=.env.local scripts/verify-swipe.ts",

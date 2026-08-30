@@ -10,6 +10,7 @@ import {
   verifySession,
 } from '@/server/auth/session';
 import { ensureUserDocument, landingRouteFor } from '@/server/users/ensure-user';
+import { ensureDemoMatches } from '@/server/users/demo-matches';
 import { badRequest, readJson, route } from '@/server/http/respond';
 
 export const runtime = 'nodejs';
@@ -29,6 +30,16 @@ export async function POST(request: Request) {
     if (!user) throw badRequest('That sign-in could not be verified.');
 
     const { created, user: record } = await ensureUserDocument(user);
+
+    // Catches accounts published before auto-matching existed. It is once-per-user
+    // and must never be the reason a sign-in fails, hence the swallow.
+    if (record.onboarding.completed) {
+      try {
+        await ensureDemoMatches(user.uid);
+      } catch (error) {
+        console.error('[session] demo matches', error);
+      }
+    }
 
     (await cookies()).set(SESSION_COOKIE, value, sessionCookieOptions(maxAge));
 

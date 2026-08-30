@@ -38,7 +38,7 @@ export default function AppShell({
     <div className={styles.shell}>
       <header className={styles.appbar}>
         <span className={styles.brand}>
-          <span className={styles.brandName}>Warm Intro</span>
+          <span className={styles.brandName}>QuadChat</span>
           <span className={styles.brandBeta}>BETA</span>
         </span>
         {actions ? <span className={styles.actions}>{actions}</span> : null}

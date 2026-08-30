@@ -28,7 +28,7 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Warm Intro',
+  title: 'QuadChat',
   description: 'Swipe-based professional referrals.',
 };
 

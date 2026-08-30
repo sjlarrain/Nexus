@@ -49,7 +49,7 @@ export default function SignInPage() {
   return (
     <main className={styles.frame}>
       <span className={styles.brand}>
-        <span className={styles.brandName}>Warm Intro</span>
+        <span className={styles.brandName}>QuadChat</span>
         <span className={styles.brandBeta}>BETA</span>
       </span>
 

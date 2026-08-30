@@ -20,7 +20,7 @@ export function googleCalendarUrl(args: {
     action: 'TEMPLATE',
     text: `Coffee with ${withName}`,
     dates: `${toUtcStamp(startsAt)}/${toUtcStamp(startsAt + THIRTY_MINUTES_MS)}`,
-    details: where ? `Meeting at ${where}.` : 'Video call — details in the Warm Intro chat.',
+    details: where ? `Meeting at ${where}.` : 'Video call — details in the QuadChat conversation.',
   });
   if (where) params.set('location', where);
   return `https://calendar.google.com/calendar/render?${params.toString()}`;

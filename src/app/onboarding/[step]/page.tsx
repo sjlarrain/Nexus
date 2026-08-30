@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Badge, Chip, GhostButton, PrimaryButton, Quote } from '@/components/ui';
+import PublishedMoment from '@/components/PublishedMoment';
 import { Step1, Step2, Step3, Step4, Step5, STEP_HEADINGS } from '../steps';
 import { allStepsComplete, canPublish, gateForStep } from '@/lib/onboarding/gates';
 import { toCard } from '@/lib/cards/card';
@@ -104,6 +105,9 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     }
   }
 
+  /** Both ways out of the publish popup — the button and the five-second timeout. */
+  const toDeck = useCallback(() => router.push('/deck'), [router]);
+
   async function publish(): Promise<void> {
     setBusy(true);
     try {
@@ -113,8 +117,6 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
         setMessage((body as { error?: string }).error ?? 'Could not publish.');
         return;
       }
-      // The deck is one tap away rather than automatic: publishing is the end of a
-      // long form and the confirmation is the point of it.
       setPublished(true);
     } finally {
       setBusy(false);
@@ -125,22 +127,6 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     return (
       <main className={styles.frame}>
         <p className={styles.sub}>{message ?? 'Loading…'}</p>
-      </main>
-    );
-  }
-
-  if (published) {
-    return (
-      <main className={styles.frame}>
-        <div className={styles.done}>
-          <span className={styles.doneMark}>✓</span>
-          <h1 className={styles.heading}>Your card is live.</h1>
-          <p className={styles.sub}>
-            That is everything we needed. Start swiping to find people who can open a door — and who
-            are looking for someone like you.
-          </p>
-          <PrimaryButton label="Start swiping" onClick={() => router.push('/deck')} />
-        </div>
       </main>
     );
   }
@@ -251,6 +237,8 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
       >
         Save &amp; exit
       </GhostButton>
+
+      {published ? <PublishedMoment onDismiss={toDeck} /> : null}
     </main>
   );
 }

@@ -337,25 +337,5 @@
   padding: 5px 11px;
 }
 
-/* --- ready to swipe -------------------------------------------------- */
-
-.done {
-  flex: 1 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  gap: 10px;
-}
-
-.doneMark {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--green-bg);
-  color: var(--green-ink);
-  font-size: 24px;
-}
+/* "Ready to swipe" used to be a screen here; it is now the popup in
+   src/components/PublishedMoment.tsx. */

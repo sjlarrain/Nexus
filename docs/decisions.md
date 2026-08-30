@@ -503,3 +503,27 @@ are never matched to each other. Idempotent: match ids derive from the uid pair,
 `demoMatchedAt` marker short-circuits the common path. `DEMO_AUTO_MATCH=false` turns
 it off without a code change — **it must be off before the app sees users who are not
 in on the demo.**
+
+## 2026-08-29 — "Your card is live" is a self-dismissing popup, not a screen
+
+**Decision.** Publishing no longer replaces the page with a confirmation screen. The
+confirmation is a popup over the review step (`src/components/PublishedMoment.tsx`),
+it carries an animated confetti burst, and it dismisses itself after five seconds
+onto the deck. "Start swiping" and Escape do the same thing sooner.
+
+**Why.** This reverses the earlier note in the onboarding page that "the deck is one
+tap away rather than automatic". The confirmation still gets its beat of celebration,
+but a screen whose only job is one button is a stop the user has to clear by hand at
+the exact moment the long form finally ended. Auto-dismissing keeps the celebration
+and removes the chore — the tap is still there for anyone who wants it now.
+
+**The five seconds are the timer, not the animation.** The dismissal is a
+`setTimeout` held in a ref so a parent re-render cannot restart it; the progress line
+under the button is decorative and the popup dismisses whether or not it ran.
+
+**Confetti is not rendered under `prefers-reduced-motion`.** `globals.css` kills every
+animation globally under that query, which would leave the pieces parked mid-air, so
+the component reads the query (`useSyncExternalStore`) and renders no pieces at all.
+The pieces are deterministic rather than random — same burst every time, and nothing
+to reason about if this ever renders during hydration. The burst is held to the 420px
+app frame so on a desktop it falls over the app rather than the board either side.

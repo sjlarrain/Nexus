@@ -38,11 +38,14 @@ type Thread = {
 };
 
 function formatSlot(startsAt: number): string {
-  return new Date(startsAt).toLocaleString(undefined, {
-    weekday: 'long',
+  const date = new Date(startsAt);
+  const day = date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const time = date.toLocaleTimeString(undefined, {
     hour: 'numeric',
     minute: '2-digit',
+    timeZoneName: 'short',
   });
+  return `${day} · ${time}`;
 }
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
@@ -267,7 +270,11 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                       {chosenSlot === null ? 'Time to be picked' : formatSlot(chosenSlot)}
                     </p>
                     <p className={styles.confirmedWhere}>
-                      {confirmedBooking.venue ? confirmedBooking.venue.name : 'Video call'}
+                      {/* "Table for 2" is always literally true — a booking is always
+                          exactly the two matched participants — not a reservation claim. */}
+                      {confirmedBooking.venue
+                        ? `${confirmedBooking.venue.name} · table for 2`
+                        : 'Video call'}
                     </p>
                     {chosenSlot !== null ? (
                       <div className={styles.confirmedActions}>

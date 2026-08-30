@@ -334,13 +334,12 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
         ))}
 
         <p className={styles.note}>
-          Nothing is charged and no table is held — {data.theirName} gets these times in the
-          chat and confirms one.
+          Nothing is charged — {data.theirName} gets these times in the chat and confirms one.
         </p>
 
         <PrimaryButton
           className={styles.cta}
-          label="Propose these times"
+          label={mode === 'in_person' ? 'Reserve table' : 'Send these times'}
           disabled={(mode === 'in_person' && !venueId) || busy}
           onClick={() =>
             void act(

@@ -21,8 +21,9 @@ export type Card = {
   headline: string;
   photos: Photo[];
   badge: string | null;
-  /** Top-left of the deck photo: where they studied. */
-  college: string | null;
+  /** Top-left of the deck photo: where they studied — every school they added, not
+      just the first, stacked one below the other when there is more than one. */
+  colleges: string[];
   /** Top-right of the deck photo: what they will actually do for someone. */
   helpTag: string | null;
   tags: string[];
@@ -57,12 +58,28 @@ export function badgeFor(profile: Pick<Profile, 'direction' | 'mode'>): string |
 }
 
 /**
- * The school shown on the deck card. Step 1's list is the source of truth; the flat
- * field is the student fallback filled in on step 2 (docs/decisions.md).
+ * The schools shown on the deck card. Step 1's list is the source of truth — every
+ * entry in it, not just the first, since a card is the one place a second school
+ * (undergrad + MBA, say) is actually worth showing. `school2` is the student
+ * fallback filled in on step 2 (docs/decisions.md), only used when step 1's list is
+ * empty, matching the same fallback `passesFilters()` already applies when matching
+ * on college.
  */
-export function collegeFor(profile: Pick<Profile, 'schools' | 'school2'>): string | null {
-  const name = (profile.schools[0]?.name ?? profile.school2).trim();
-  return name.length > 0 ? name : null;
+export function collegesFor(profile: Pick<Profile, 'schools' | 'school2'>): string[] {
+  const names =
+    profile.schools.length > 0
+      ? profile.schools.map((school) => school.name)
+      : [profile.school2];
+
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of names) {
+    const name = raw.trim();
+    if (!name || seen.has(name.toLowerCase())) continue;
+    seen.add(name.toLowerCase());
+    out.push(name);
+  }
+  return out;
 }
 
 /**
@@ -143,7 +160,7 @@ export function toCard(uid: string, profile: Profile): Card {
     headline: profile.headline,
     photos: profile.photos,
     badge: badgeFor(profile),
-    college: collegeFor(profile),
+    colleges: collegesFor(profile),
     helpTag: helpTagFor(profile),
     tags: tagsFor(profile),
     direction: profile.direction,

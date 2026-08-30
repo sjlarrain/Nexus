@@ -664,6 +664,66 @@ Calendar link — no .ics export, but a genuine calendar event once added, built
 state machine and pushes straight to the propose screen, rather than just linking to
 "see the details" as before.
 
+## 2026-08-30 — "Save & exit" actually exits; a photo slot can be changed and removed
+
+**"Save & exit" now navigates to `/deck` on success**, instead of saving silently and
+leaving the user on the same step with only a small status line to show for it — which
+read as broken, since the button's own label promises leaving the page. The deck is
+reachable with an incomplete profile (only publishing is gated), so there is somewhere
+real to send them; `/` would just bounce them back to the same step via
+`landingRouteFor`.
+
+**A photo slot can now be changed and removed, within the placeholder system E5 has
+not replaced yet.** The placeholder URL was seeded only from name and slot, so
+tapping an already-filled slot to "edit" it deterministically produced the exact same
+image — there was no way to change one once set, and no way to clear one at all. A
+local tap counter now feeds the seed, so re-tapping cycles to a different placeholder,
+and each slot gets a small × to remove it outright. This is not photo upload — that is
+still E5, still blocked on the Blaze plan the owner has not opted into (2026-08-28) —
+it is the "add/edit" a placeholder-based slot can honestly offer.
+
+## 2026-08-30 — The tour stops covering what it is pointing at; "Reserve table"
+
+**`TipsTour` drops the bottom sheet — the owner flagged it directly, with a
+screenshot where the callout hid the very card it was describing.** The callout now
+sits beside the spot instead: below it if there is room, above it if there is not but
+the swipe row (scrolled near the bottom) has room up there, or below a *capped* spot
+only for the deck card — the one target taller than the screen either way. Capping
+the spot's top edge instead of its bottom was tried and rejected: it hid the top of
+the card, which is exactly what the first tip is about, to buy room the callout would
+only spend sitting over the app's own header. Each target is scrolled into view first,
+since the card can run taller than the viewport and there is otherwise no guarantee
+any of this fits on screen at once.
+
+**The coffee CTA is "Reserve table"** (in person) or "Send these times" (video —
+"reserve table" makes no sense without one). The note below it lost "and no table is
+held": that phrase directly contradicted a button now saying to reserve one. The
+underlying honesty is unchanged — nothing is charged, this is still propose-then-
+accept with no OpenTable integration — only the wording that was in tension with the
+new label moved.
+
+**The confirmed-coffee card now reads "Mon, Aug 31 · 10:00 AM PDT" and "Blue Bottle
+Coffee · table for 2"**, matching the mock's density without its price. "Table for 2"
+is not a reservation claim, just a true fact — a booking is always exactly the two
+matched participants.
+
+## 2026-08-30 — Every school on the card, and why the help tag sat on the wrong side
+
+**`Card.college: string | null` is now `Card.colleges: string[]`, and the deck card
+stacks every one of them.** The owner flagged a card whose top-left tag read "Happy to
+chat" — the *help* tag, not a college — sitting where the college belongs. Root cause:
+`collegeFor()` only ever read `schools[0]`, and `.photoTags`'s single visible child
+(the help tag, since this person had no school on file) sat at `justify-content:
+space-between`'s start rather than its end — that behavior only holds with two flex
+children present. The left side of `.photoTags` is now always rendered, even empty,
+so the help tag stays pinned right regardless of how many schools there are. Filtering
+already read every school (`passesFilters()` in `src/lib/deck/rank.ts`) — only the
+card's own display was stuck on the first one.
+
+**A long school name now ellipsizes on one line instead of wrapping inside the pill.**
+Not the reported bug, but the same corner, and `.collegeTag` had no overflow handling
+at all before this.
+
 ## 2026-08-30 — The seeded population likes you; it no longer matches you
 
 **`DEMO_MATCH_SHARE` (0.75 mutual matches) becomes `DEMO_LIKE_SHARE` (0.70 inbound

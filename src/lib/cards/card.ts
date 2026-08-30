@@ -53,15 +53,16 @@ export function badgeFor(profile: Pick<Profile, 'direction' | 'mode'>): string |
 }
 
 /**
- * The role line differs by mode: a student leads with their school, someone looking
- * out leads with where they were most recently.
+ * The role line differs by mode: a student leads with their school — they are no
+ * longer asked for a company, title or function — and someone looking out leads with
+ * where they were most recently.
  */
 export function roleLineFor(profile: Profile): string {
   const school = profile.schools[0]?.name ?? profile.school2;
 
   switch (profile.mode) {
     case 'student':
-      return composeRoleLine(profile.lane, school, profile.city);
+      return composeRoleLine(school, profile.city);
     case 'looking':
       return composeRoleLine(profile.role, `ex-${profile.company}`, profile.city);
     case 'working':
@@ -80,7 +81,7 @@ export function deckLineFor(profile: Profile): string {
 
   switch (profile.mode) {
     case 'student':
-      return composeRoleLine(profile.lane, school, profile.gradYear);
+      return composeRoleLine(school, profile.gradYear);
     case 'looking':
       return composeRoleLine(profile.role, `ex-${profile.company}`, years);
     case 'working':
@@ -91,7 +92,7 @@ export function deckLineFor(profile: Profile): string {
 
 /** Small set of chips under the card: what they do and what they are into. */
 export function tagsFor(profile: Profile, limit = 5): string[] {
-  const tags = [profile.industry, ...profile.lanes, ...profile.interests];
+  const tags = [...profile.industry, ...profile.lanes, ...profile.interests];
   const seen = new Set<string>();
   const out: string[] = [];
   for (const tag of tags) {

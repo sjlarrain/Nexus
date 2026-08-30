@@ -366,3 +366,80 @@ switches to a dynamic `import()`.
 **Consequence.** Remove this override and the app builds, passes every test locally,
 and fails on deploy — so it must not be treated as tidy-up. The health probe's
 `adminCredential: "unloadable"` exists to name this class of failure.
+
+## 2026-08-29 — Onboarding revision: GICS taxonomy, lighter gates, no Google sign-in
+
+**Decision.** The PM's onboarding pass, implemented as specified. The parts that were
+a judgement call rather than a restatement of the requirement:
+
+**Industries are the eleven GICS sectors, and positions hang off them.**
+`src/lib/refdata/taxonomy.ts` replaces the old 30-item industry list and the flat
+function list with `GICS_SECTORS` and `POSITIONS_BY_SECTOR`, the latter transcribed
+from `docs/Others/GICS Positions.md`. `positionsForSectors()` is the narrowing: with
+several sectors selected it returns their **union**, in sector order, deduplicated —
+several sectors share a position, and a repeated cell in the grid reads as a bug.
+Position labels drop the source list's explanatory parentheticals ("Finance & Treasury
+(capital-intensive project funding)" is a note to the reader, not a chip label); short
+acronyms that read as part of the name — HSE, FP&A — are kept.
+
+GICS is coarse: "Information Technology" holds both a semiconductor engineer and a
+SaaS salesperson. Sector level was chosen because it is what was asked for and it is
+faster to fill in; industry-group level (24 groups) would match better. Revisiting
+that is a data change plus a re-selection prompt for existing users.
+
+**"Other" is one interaction everywhere, and it stays private.** Every taxonomy grid
+uses one `TaxonomyField` component. An "Other" cell (or an "+ Add other" button where
+the list has no Other cell) opens a text field, and what the user types is appended to
+the same array as a plain string. It lives on that profile only — it does **not** join
+the shared taxonomy. Writing user text back into a shared list buys a moderation and
+deduplication problem ("Fintech" / "FinTech" / "fin-tech") for no v1 benefit; curating
+submitted values by hand is the cheaper path.
+
+**`industry` and `lane` are arrays now.** Both fields on the profile changed from
+scalar to `string[]` (capped at `LIMITS.industries` / `LIMITS.roles`). The names are
+unchanged because `industries` and `lanes` already mean "what I am looking for". Card
+tags, deck filters and the fixture population were updated with them. **Existing
+documents carry the old scalar values and will fail validation** — the demo population
+is regenerated with `npm run seed:reset`; any real profile would need a backfill.
+
+**A student is asked two questions.** School and graduation year, both required, both
+carried over from step 1 and editable in place behind a pencil. Step 1's school list
+is the single source of truth: an edit writes back to `schools[0]` rather than forking
+into a second value, and only reaches it once the year is four digits, since a
+part-typed year fails `schoolSchema`.
+
+**Course type is free text.** `schoolSchema.course` was `z.enum(COURSE_TYPES)`; the
+"Other" chip has to be able to store what the user typed, so it is now a trimmed
+string with `COURSE_TYPES` as the offered chips.
+
+**Doors are the current employer only.** The peer-map suggestions are gone from the
+form; the door section shows the company typed above and nothing else. The fixture
+generator was changed to match — a seeded person must not hold doors a real one could
+not enter — which also means door overlap in the deck now means "they work where you
+are targeting", which is the truer signal.
+
+**Step 4 is no longer skippable.** Interests and "open to" are required, the bio is
+not, so `canPublish` now covers steps 1 through 4 and the "Skip for now" button is
+gone. The interest list is cut to sixteen.
+
+**Complete is a light-green box, and Continue returns to the review.** The review
+row's complete state uses the existing `--green-bg` / `--green-ink` tokens with a tick
+alongside, so completion is not signalled by colour alone. Once every section passes,
+Continue on any step goes to the review rather than the next step — which is the
+"takes you back to the last view" behaviour, without a navigation flag to keep in
+sync. Publishing then lands on a confirmation screen with one button into the deck.
+
+**Google sign-in is removed from the UI, not from the codebase.** The button and its
+divider are gone from `/signin`; `signInWithGoogle` stays in `auth-client` so
+restoring it once the OAuth consent screen is approved is one block of JSX.
+
+**Still open — needs the PM.**
+
+- Years bands are labelled `0-5`, `5-10`, `10+` as specified. The boundaries overlap;
+  `0-5` / `6-10` / `10+` or `<5` / `5-10` / `10+` would not.
+- The sixteen interests are a reasonable spread chosen here, not a supplied list.
+- "Reduce up to 16 options **and add**" — the requirement is cut off mid-sentence. The
+  existing "Something else" free-text field is assumed to be what was meant.
+- Multiselect caps are the existing three per field. No cap was specified.
+- Target companies on "What are we looking for" were left in place and made optional;
+  the requirement named the two taxonomies to keep, not the fields to delete.

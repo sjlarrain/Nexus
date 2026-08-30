@@ -41,7 +41,12 @@ export const OPEN_TO = [
 ] as const;
 export type OpenTo = (typeof OPEN_TO)[number];
 
-export const YEARS_BANDS = ['0-1', '2-3', '4-6', '7-10', '10+'] as const;
+/**
+ * Three bands, per the PM's onboarding revision. The boundaries are inclusive on the
+ * lower band as written ("0-5", "5-10", "10+"); flagged in docs/decisions.md as the
+ * one label the PM may still want to disambiguate.
+ */
+export const YEARS_BANDS = ['0-5', '5-10', '10+'] as const;
 export type YearsBand = (typeof YEARS_BANDS)[number];
 
 /** Caps that surface in the UI as the "n of m" pill hint (spec section 6). */

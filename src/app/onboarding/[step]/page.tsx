@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Badge, Chip, GhostButton, PrimaryButton, Quote } from '@/components/ui';
 import { Step1, Step2, Step3, Step4, Step5, STEP_HEADINGS } from '../steps';
-import { canPublish, gateForStep } from '@/lib/onboarding/gates';
+import { allStepsComplete, canPublish, gateForStep } from '@/lib/onboarding/gates';
 import { toCard } from '@/lib/cards/card';
 import type { Profile } from '@/lib/schemas/profile';
 import styles from '../onboarding.module.css';
@@ -37,6 +37,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
   const [edits, setEdits] = useState<Partial<Profile>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [published, setPublished] = useState(false);
 
   const fetchMe = useCallback(async (): Promise<MeResponse> => {
     const response = await fetch('/api/me');
@@ -107,7 +108,9 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
         setMessage((body as { error?: string }).error ?? 'Could not publish.');
         return;
       }
-      router.push('/deck');
+      // The deck is one tap away rather than automatic: publishing is the end of a
+      // long form and the confirmation is the point of it.
+      setPublished(true);
     } finally {
       setBusy(false);
     }
@@ -121,7 +124,26 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     );
   }
 
+  if (published) {
+    return (
+      <main className={styles.frame}>
+        <div className={styles.done}>
+          <span className={styles.doneMark}>✓</span>
+          <h1 className={styles.heading}>Your card is live.</h1>
+          <p className={styles.sub}>
+            That is everything we needed. Start swiping to find people who can open a door — and who
+            are looking for someone like you.
+          </p>
+          <PrimaryButton label="Start swiping" onClick={() => router.push('/deck')} />
+        </div>
+      </main>
+    );
+  }
+
   const heading = STEP_HEADINGS[step] ?? STEP_HEADINGS[1];
+  // Spec: once every section is green, Continue returns to the review rather than
+  // walking the user through steps they have already finished.
+  const nextStep = allStepsComplete(draft) ? LAST_STEP : step + 1;
   const gate = step === LAST_STEP ? canPublish(draft) : gateForStep(step, draft);
   const card = toCard(me.uid, draft);
 
@@ -205,7 +227,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
             gate={gate}
             disabled={busy}
             onClick={async () => {
-              if (await save(step + 1)) router.push(`/onboarding/${step + 1}` as Route);
+              if (await save(nextStep)) router.push(`/onboarding/${nextStep}` as Route);
             }}
           />
         )}
@@ -218,7 +240,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
           if (await save(step)) setMessage('Saved. You can pick this up later.');
         }}
       >
-        {step === 4 ? 'Skip for now' : 'Save & exit'}
+        Save &amp; exit
       </GhostButton>
     </main>
   );

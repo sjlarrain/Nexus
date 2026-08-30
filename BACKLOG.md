@@ -81,13 +81,17 @@ Covers spec §4 (profile object) and §3 (gating).
 - [x] `E3.6` `POST /api/profile/publish` — full validation, sets `onboarding.completed`,
       makes the user visible in decks
 - [x] `E3.7` Unit tests for every row of the §3 gate table, pass and fail cases
+- [x] `E3.8` PM onboarding revision: GICS sectors + per-sector positions, multiselect
+      industry/function, lighter working gates, student autopopulation, current-employer
+      doors, mandatory step 4, green Complete state, ready-to-swipe screen
+      (docs/decisions.md)
 
 ## E4 — Reference data
 
 - [x] `E4.1` US states to cities dataset; city stored as `"City, ST"`; changing state
       clears city (spec §2 step 1)
-- [x] `E4.2` Industries, functions/lanes, years bands, course types (Undergraduate,
-      MBA, MSBA, MS, PhD, Other)
+- [x] `E4.2` Industries (GICS sectors), functions/lanes (positions per sector), years
+      bands, course types (Undergraduate, MBA, MSBA, MS, PhD, Other + free text)
 - [x] `E4.3` `openTo` options (Referrals, Mock interviews, Resume review, Career
       advice, Industry intel, Cofounder chat) and the interests taxonomy
 - [x] `E4.4` Company peer map (Figma to Notion, Canva, Adobe, Linear, Airtable, plus a

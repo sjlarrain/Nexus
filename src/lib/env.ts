@@ -36,7 +36,9 @@ export function publicEnv(): PublicEnv {
   const parsed = publicEnvSchema.safeParse(raw);
   if (!parsed.success) {
     const missing = parsed.error.issues.map((i) => i.message).join('\n  ');
-    throw new Error(`Firebase client config is incomplete. Copy .env.example to .env.local.\n  ${missing}`);
+    throw new Error(
+      `Firebase client config is incomplete. Copy .env.example to .env.local.\n  ${missing}`,
+    );
   }
   cached = parsed.data;
   return cached;

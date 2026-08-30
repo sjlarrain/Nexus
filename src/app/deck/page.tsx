@@ -133,7 +133,9 @@ export default function DeckPage() {
       </div>
 
       <div className={deckClass}>
-        {next ? <SwipeCard key={next.uid} card={next} onIntent={() => {}} interactive={false} /> : null}
+        {next ? (
+          <SwipeCard key={next.uid} card={next} onIntent={() => {}} interactive={false} />
+        ) : null}
         {top ? (
           <SwipeCard key={top.uid} card={top} onIntent={intent} leaving={leaving} />
         ) : (

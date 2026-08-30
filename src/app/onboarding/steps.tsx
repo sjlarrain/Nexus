@@ -9,15 +9,19 @@ import {
   PHOTO_SLOTS,
   PHOTO_SLOT_LABELS,
   YEARS_BANDS,
-  type CourseType,
   type HelpKind,
   type Mode,
 } from '@/lib/refdata/constants';
-import { INDUSTRIES, FUNCTIONS, INTERESTS } from '@/lib/refdata/taxonomy';
+import {
+  INTERESTS,
+  OTHER_OPTION,
+  SECTOR_OPTIONS,
+  positionsForSectors,
+} from '@/lib/refdata/taxonomy';
 import { CITIES_BY_STATE, STATE_NAMES, formatCity, parseCity } from '@/lib/refdata/locations';
 import { suggestCompanies } from '@/lib/refdata/peer-map';
 import { hatchClass, hatchWarmClass } from '@/components/ui';
-import type { Profile } from '@/lib/schemas/profile';
+import type { Profile, School } from '@/lib/schemas/profile';
 import styles from './onboarding.module.css';
 import { useState } from 'react';
 
@@ -47,9 +51,111 @@ export const STEP_HEADINGS: Record<number, { title: string; sub: string }> = {
     title: 'What are you looking for?',
     sub: 'We use this to rank who you see, and who sees you.',
   },
-  4: { title: 'A little colour', sub: 'Skippable. It gives people something to open with.' },
+  4: { title: 'A little colour', sub: 'It gives people something to open with.' },
   5: { title: 'Review your card', sub: 'This is exactly what other people will see.' },
 };
+
+/* ================================================================== */
+/* Shared: the taxonomy grid                                          */
+/* ================================================================== */
+
+/**
+ * One multi-select grid with an escape hatch, used by every taxonomy field on steps
+ * 2 and 3 — sectors, positions, roles.
+ *
+ * Deliberately one component rather than five copies: steps 2 and 3 ask for the same
+ * two taxonomies, and separate implementations would drift the moment the sector list
+ * changes. The escape hatch is also one interaction everywhere: an "Other" cell in
+ * the grid opens a text field, and what the user types becomes its own selected cell.
+ * Those values stay on this profile and never join the shared taxonomy.
+ */
+function TaxonomyField({
+  label,
+  options,
+  selected,
+  cap,
+  onChange,
+  emptyHint,
+  addPlaceholder,
+}: {
+  label: string;
+  options: readonly string[];
+  selected: readonly string[];
+  cap: number;
+  onChange: (next: string[]) => void;
+  /** Shown instead of the grid when there is nothing to choose from yet. */
+  emptyHint?: string;
+  addPlaceholder: string;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [value, setValue] = useState('');
+
+  // Anything chosen that is not a listed option was typed by the user. It renders as
+  // its own cell so it can be seen and removed the same way as everything else.
+  const custom = selected.filter((entry) => !options.includes(entry));
+  const cells = [...options, ...custom];
+  const full = selected.length >= cap;
+
+  function toggle(entry: string): void {
+    if (entry === OTHER_OPTION) {
+      setAdding((current) => !current);
+      return;
+    }
+    onChange(
+      selected.includes(entry)
+        ? selected.filter((candidate) => candidate !== entry)
+        : full
+          ? [...selected]
+          : [...selected, entry],
+    );
+  }
+
+  function commit(): void {
+    const entry = value.trim();
+    if (!entry || full || selected.includes(entry)) return;
+    onChange([...selected, entry]);
+    setValue('');
+    setAdding(false);
+  }
+
+  const showGrid = options.length > 0 || custom.length > 0;
+
+  return (
+    <Field label={`${label} · ${selected.length} of ${cap}`}>
+      {showGrid ? (
+        <SelectGrid options={cells} selected={selected} disabled={() => full} onToggle={toggle} />
+      ) : (
+        <p className={styles.status}>{emptyHint}</p>
+      )}
+
+      {options.includes(OTHER_OPTION) ? null : (
+        <button type="button" className={styles.addOther} onClick={() => setAdding(!adding)}>
+          <Chip>{adding ? 'Cancel' : '+ Add other'}</Chip>
+        </button>
+      )}
+
+      {adding ? (
+        <div className={styles.row} style={{ marginTop: 8 }}>
+          <Input
+            value={value}
+            placeholder={addPlaceholder}
+            onChange={(event) => setValue(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') return;
+              event.preventDefault();
+              commit();
+            }}
+          />
+          <button type="button" onClick={commit}>
+            <Chip tone="solid">Add</Chip>
+          </button>
+        </div>
+      ) : null}
+
+      {full ? <p className={styles.status}>That is the maximum. Remove one to swap.</p> : null}
+    </Field>
+  );
+}
 
 /* ================================================================== */
 /* Step 1 — Who are you?                                              */
@@ -65,10 +171,16 @@ function placeholderPhoto(slot: string, seed: string): string {
   return `https://picsum.photos/seed/${encodeURIComponent(`${seed}-${slot}`)}/600/800`;
 }
 
+const BLANK_SCHOOL: School = { name: '', course: 'Undergraduate', year: '' };
+
 export function Step1({ draft, patch }: StepProps) {
-  const [school, setSchool] = useState<{ name: string; course: CourseType; year: string } | null>(
-    null,
+  // The add-school form is open from the start rather than hidden behind a button:
+  // education is the first thing most people fill in and an empty section read as
+  // "nothing to do here".
+  const [school, setSchool] = useState<School | null>(
+    draft.schools.length > 0 ? null : { ...BLANK_SCHOOL },
   );
+  const [courseOther, setCourseOther] = useState('');
 
   const parsed = parseCity(draft.city);
   const stateCode = parsed?.state ?? (draft.stateName as keyof typeof CITIES_BY_STATE | '');
@@ -83,6 +195,18 @@ export function Step1({ draft, patch }: StepProps) {
         { slot, url: placeholderPhoto(slot, seed), storagePath: `users/pending/photos/${slot}` },
       ],
     });
+  }
+
+  // "Other" is a chip like any other; picking it swaps the chip row for a text field
+  // and whatever is typed becomes the stored course name.
+  const onOther = school !== null && !COURSE_TYPES.includes(school.course as never);
+
+  function save(): void {
+    if (school === null || !school.name.trim()) return;
+    const course = onOther ? courseOther.trim() || OTHER_OPTION : school.course;
+    patch({ schools: [...draft.schools, { ...school, course }] });
+    setSchool(null);
+    setCourseOther('');
   }
 
   return (
@@ -182,7 +306,7 @@ export function Step1({ draft, patch }: StepProps) {
         />
       </Field>
 
-      <Field label={`Education (optional, up to ${LIMITS.schools})`}>
+      <Field label={`School (up to ${LIMITS.schools})`}>
         {draft.schools.map((entry, index) => (
           <div key={`${entry.name}-${index}`} className={styles.listRow}>
             <p>
@@ -206,11 +330,36 @@ export function Step1({ draft, patch }: StepProps) {
           <div className={styles.listRow} style={{ display: 'block' }}>
             <ChipRow>
               {COURSE_TYPES.map((course) => (
-                <button key={course} type="button" onClick={() => setSchool({ ...school, course })}>
-                  <Chip tone={school.course === course ? 'solid' : 'default'}>{course}</Chip>
+                <button
+                  key={course}
+                  type="button"
+                  onClick={() =>
+                    setSchool({ ...school, course: course === OTHER_OPTION ? '' : course })
+                  }
+                >
+                  <Chip
+                    tone={
+                      (course === OTHER_OPTION ? onOther : school.course === course)
+                        ? 'solid'
+                        : 'default'
+                    }
+                  >
+                    {course}
+                  </Chip>
                 </button>
               ))}
             </ChipRow>
+
+            {onOther ? (
+              <div style={{ marginTop: 10 }}>
+                <Input
+                  value={courseOther}
+                  placeholder="Which course?"
+                  onChange={(e) => setCourseOther(e.target.value)}
+                />
+              </div>
+            ) : null}
+
             <div className={styles.row} style={{ marginTop: 10 }}>
               <Input
                 value={school.name}
@@ -219,32 +368,28 @@ export function Step1({ draft, patch }: StepProps) {
               />
               <Input
                 value={school.year}
+                inputMode="numeric"
+                maxLength={4}
                 placeholder="Batch year"
                 onChange={(e) => setSchool({ ...school, year: e.target.value })}
               />
             </div>
             <div className={styles.doorHelp}>
-              <button type="button" onClick={() => setSchool(null)}>
-                <Chip>Cancel</Chip>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!school.name.trim()) return;
-                  patch({ schools: [...draft.schools, school] });
-                  setSchool(null);
-                }}
-              >
+              {draft.schools.length > 0 ? (
+                <button type="button" onClick={() => setSchool(null)}>
+                  <Chip>Cancel</Chip>
+                </button>
+              ) : null}
+              <button type="button" onClick={save}>
                 <Chip tone="solid">Save school</Chip>
               </button>
             </div>
           </div>
-        ) : draft.schools.length < LIMITS.schools ? (
-          <button
-            type="button"
-            onClick={() => setSchool({ name: '', course: 'Undergraduate', year: '' })}
-          >
-            <Chip>+ Add new school</Chip>
+        ) : null}
+
+        {school === null && draft.schools.length < LIMITS.schools ? (
+          <button type="button" onClick={() => setSchool({ ...BLANK_SCHOOL })}>
+            <Chip>+ Add new</Chip>
           </button>
         ) : null}
       </Field>
@@ -260,7 +405,7 @@ const MODE_OPTIONS: { mode: Mode; title: string; blurb: string }[] = [
   {
     mode: 'working',
     title: 'I am working',
-    blurb: 'Your card shows where you are and the teams you can vouch for.',
+    blurb: 'Your card shows where you are and the team you can vouch for.',
   },
   {
     mode: 'student',
@@ -270,26 +415,93 @@ const MODE_OPTIONS: { mode: Mode; title: string; blurb: string }[] = [
   {
     mode: 'looking',
     title: 'I am looking out',
-    blurb: 'Your card leads with target roles and your pitch.',
+    blurb: 'Your card leads with where you were most recently.',
   },
 ];
 
-export function Step2({ draft, patch }: StepProps) {
-  const [custom, setCustom] = useState('');
-  // Already-chosen companies are passed so the suggestions never repeat them.
-  const doors = suggestCompanies(draft.company, draft.referCompanies, 8);
+/** School and graduation, carried over from step 1 and editable in place. */
+function StudentSection({ draft, patch }: StepProps) {
+  const source = draft.schools[0] ?? null;
+  const schoolName = source?.name ?? draft.school2;
+  const gradYear = source?.year ?? draft.gradYear;
 
-  function toggleDoor(company: string): void {
-    const on = draft.referCompanies.includes(company);
-    const will = { ...draft.will };
-    if (on) delete will[company];
-    else will[company] = 'Happy to refer';
-    patch({
-      referCompanies: on
-        ? draft.referCompanies.filter((entry) => entry !== company)
-        : [...draft.referCompanies, company],
-      will,
-    });
+  // Nothing to carry over means there is nothing to confirm — open straight into
+  // the inputs rather than showing two empty read-only rows.
+  const [editing, setEditing] = useState(schoolName.trim().length === 0);
+
+  /**
+   * Step 1's school list is the single source of truth (docs/decisions.md), so an
+   * edit here writes back to it and mirrors into the flat fields the card reads.
+   * A part-typed year would fail `schoolSchema`, so it only reaches the list once it
+   * is four digits.
+   */
+  function setName(value: string): void {
+    patch(
+      source
+        ? { schools: [{ ...source, name: value }, ...draft.schools.slice(1)], school2: value }
+        : { school2: value },
+    );
+  }
+
+  function setYear(value: string): void {
+    const complete = /^\d{4}$/.test(value);
+    patch(
+      source && complete
+        ? { schools: [{ ...source, year: value }, ...draft.schools.slice(1)], gradYear: value }
+        : { gradYear: value },
+    );
+  }
+
+  return (
+    <>
+      <div className={styles.sectionHead}>
+        <span className={styles.sectionHeadLabel}>From your profile</span>
+        <button
+          type="button"
+          className={styles.editIcon}
+          aria-label={editing ? 'Done editing' : 'Edit school and graduation'}
+          aria-pressed={editing}
+          onClick={() => setEditing(!editing)}
+        >
+          {editing ? 'Done' : '✎ Edit'}
+        </button>
+      </div>
+
+      <div className={styles.row}>
+        <Field label="School">
+          <Input
+            value={schoolName}
+            readOnly={!editing}
+            placeholder="Where do you study?"
+            onChange={(e) => setName(e.target.value)}
+          />
+        </Field>
+        <Field label="Graduating">
+          <Input
+            value={gradYear}
+            readOnly={!editing}
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="2027"
+            onChange={(e) => setYear(e.target.value)}
+          />
+        </Field>
+      </div>
+    </>
+  );
+}
+
+export function Step2({ draft, patch }: StepProps) {
+  const positions = positionsForSectors(draft.industry);
+  const door = draft.company.trim();
+  const doorOn = door.length > 0 && draft.referCompanies.includes(door);
+
+  function toggleDoor(): void {
+    patch(
+      doorOn
+        ? { referCompanies: [], will: {} }
+        : { referCompanies: [door], will: { [door]: 'Happy to refer' } },
+    );
   }
 
   return (
@@ -308,118 +520,91 @@ export function Step2({ draft, patch }: StepProps) {
         ))}
       </div>
 
-      {draft.mode === null ? null : (
+      {draft.mode === null ? null : draft.mode === 'student' ? (
+        <StudentSection draft={draft} patch={patch} />
+      ) : (
         <>
           <div className={styles.row}>
             <Field label={draft.mode === 'looking' ? 'Most recent company' : 'Company'}>
-              <Input
-                value={draft.company}
-                disabled={draft.mode === 'student'}
-                onChange={(e) => patch({ company: e.target.value })}
-              />
+              <Input value={draft.company} onChange={(e) => patch({ company: e.target.value })} />
             </Field>
             <Field label={draft.mode === 'looking' ? 'Most recent title' : 'Title'}>
-              <Input
-                value={draft.role}
-                disabled={draft.mode === 'student'}
-                onChange={(e) => patch({ role: e.target.value })}
-              />
+              <Input value={draft.role} onChange={(e) => patch({ role: e.target.value })} />
             </Field>
           </div>
 
-          {draft.mode === 'student' ? (
-            <div className={styles.row}>
-              <Field label="School">
-                <Input
-                  value={draft.schools[0]?.name ?? draft.school2}
-                  disabled={draft.schools.length > 0}
-                  onChange={(e) => patch({ school2: e.target.value })}
-                />
-              </Field>
-              <Field label="Graduating">
-                <Input
-                  value={draft.gradYear}
-                  onChange={(e) => patch({ gradYear: e.target.value })}
-                />
-              </Field>
-            </div>
-          ) : null}
-
-          <Field label="Function">
-            <SelectGrid
-              options={FUNCTIONS}
-              selected={draft.lane ? [draft.lane] : []}
-              onToggle={(lane) => patch({ lane: draft.lane === lane ? '' : lane })}
-            />
-          </Field>
-
-          <Field label={draft.mode === 'student' ? 'Industry (optional)' : 'Industry'}>
-            <SelectGrid
-              options={INDUSTRIES}
-              selected={draft.industry ? [draft.industry] : []}
-              onToggle={(industry) =>
-                patch({ industry: draft.industry === industry ? '' : industry })
-              }
-            />
-          </Field>
-
-          {draft.mode === 'student' ? null : (
-            <Field label="Years in this line of work">
-              <SelectGrid
-                columns={3}
-                options={YEARS_BANDS}
-                selected={draft.years ? [draft.years] : []}
-                onToggle={(years) => patch({ years: draft.years === years ? '' : years })}
+          {/* Someone looking out is asked for their most recent seat and nothing more. */}
+          {draft.mode === 'working' ? (
+            <>
+              <TaxonomyField
+                label="Industry"
+                options={SECTOR_OPTIONS}
+                selected={draft.industry}
+                cap={LIMITS.industries}
+                addPlaceholder="Which industry?"
+                onChange={(industry) =>
+                  patch({
+                    industry,
+                    // Positions are scoped to the chosen sectors, so dropping a
+                    // sector must drop the positions it was the only source of.
+                    lane: draft.lane.filter(
+                      (entry) =>
+                        positionsForSectors(industry).includes(entry) ||
+                        !positionsForSectors(draft.industry).includes(entry),
+                    ),
+                  })
+                }
               />
-            </Field>
-          )}
 
-          {draft.mode === 'student' ? null : (
-            <Field label="Where you can open a door">
-              <SelectGrid options={doors} selected={draft.referCompanies} onToggle={toggleDoor} />
+              <TaxonomyField
+                label="Function (optional)"
+                options={positions}
+                selected={draft.lane}
+                cap={LIMITS.roles}
+                addPlaceholder="Which function?"
+                emptyHint="Pick an industry first — functions are scoped to it."
+                onChange={(lane) => patch({ lane })}
+              />
 
-              <div className={styles.row} style={{ marginTop: 8 }}>
-                <Input
-                  value={custom}
-                  placeholder="Add a company we missed"
-                  onChange={(e) => setCustom(e.target.value)}
+              <Field label="Years in this line of work (optional)">
+                <SelectGrid
+                  columns={3}
+                  options={YEARS_BANDS}
+                  selected={draft.years ? [draft.years] : []}
+                  onToggle={(years) => patch({ years: draft.years === years ? '' : years })}
                 />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const name = custom.trim();
-                    if (!name || draft.referCompanies.includes(name)) return;
-                    patch({
-                      referCompanies: [...draft.referCompanies, name],
-                      will: { ...draft.will, [name]: 'Happy to refer' },
-                    });
-                    setCustom('');
-                  }}
-                >
-                  <Chip>Add</Chip>
-                </button>
-              </div>
+              </Field>
 
-              {draft.referCompanies.map((company) => (
-                <div key={company} className={styles.listRow} style={{ display: 'block' }}>
-                  <p>{company}</p>
-                  <div className={styles.doorHelp}>
-                    {HELP_KINDS.map((kind) => (
-                      <button
-                        key={kind}
-                        type="button"
-                        onClick={() => patch({ will: { ...draft.will, [company]: kind } })}
-                      >
-                        <Chip tone={draft.will[company] === kind ? 'solid' : 'default'}>
-                          {kind}
-                        </Chip>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </Field>
-          )}
+              <Field label="Where you can open a door (optional)">
+                {door ? (
+                  <>
+                    <SelectGrid
+                      options={[door]}
+                      selected={doorOn ? [door] : []}
+                      onToggle={toggleDoor}
+                    />
+                    {doorOn ? (
+                      <div className={styles.doorHelp}>
+                        {HELP_KINDS.map((kind) => (
+                          <button
+                            key={kind}
+                            type="button"
+                            onClick={() => patch({ will: { [door]: kind } })}
+                          >
+                            <Chip tone={draft.will[door] === kind ? 'solid' : 'default'}>
+                              {kind}
+                            </Chip>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </>
+                ) : (
+                  <p className={styles.status}>Add your company above and it appears here.</p>
+                )}
+              </Field>
+            </>
+          ) : null}
         </>
       )}
     </>
@@ -433,39 +618,49 @@ export function Step2({ draft, patch }: StepProps) {
 export function Step3({ draft, patch }: StepProps) {
   const [custom, setCustom] = useState('');
   const targets = suggestCompanies(draft.company, draft.targetCompanies, 8);
-
-  function toggle<T extends string>(list: readonly T[], value: T, cap: number): T[] {
-    if (list.includes(value)) return list.filter((entry) => entry !== value);
-    return list.length >= cap ? [...list] : [...list, value];
-  }
+  const roles = positionsForSectors(draft.industries);
 
   return (
     <>
-      <Field label={`Industries you want intros in (max ${LIMITS.industries})`}>
-        <SelectGrid
-          options={INDUSTRIES}
-          selected={draft.industries}
-          disabled={() => draft.industries.length >= LIMITS.industries}
-          onToggle={(value) =>
-            patch({ industries: toggle(draft.industries, value, LIMITS.industries) })
-          }
-        />
-      </Field>
+      <TaxonomyField
+        label="Industries you want intros in"
+        options={SECTOR_OPTIONS}
+        selected={draft.industries}
+        cap={LIMITS.industries}
+        addPlaceholder="Which industry?"
+        onChange={(industries) =>
+          patch({
+            industries,
+            lanes: draft.lanes.filter(
+              (entry) =>
+                positionsForSectors(industries).includes(entry) ||
+                !positionsForSectors(draft.industries).includes(entry),
+            ),
+          })
+        }
+      />
 
-      <Field label={`Roles you are targeting (max ${LIMITS.roles})`}>
-        <SelectGrid
-          options={FUNCTIONS}
-          selected={draft.lanes}
-          disabled={() => draft.lanes.length >= LIMITS.roles}
-          onToggle={(value) => patch({ lanes: toggle(draft.lanes, value, LIMITS.roles) })}
-        />
-      </Field>
+      <TaxonomyField
+        label="Roles you are targeting"
+        options={roles}
+        selected={draft.lanes}
+        cap={LIMITS.roles}
+        addPlaceholder="Which role?"
+        emptyHint="Pick an industry first — roles are scoped to it."
+        onChange={(lanes) => patch({ lanes })}
+      />
 
-      <Field label="Target companies">
+      <Field label="Target companies (optional)">
         <SelectGrid
           options={targets}
           selected={draft.targetCompanies}
-          onToggle={(value) => patch({ targetCompanies: toggle(draft.targetCompanies, value, 12) })}
+          onToggle={(value) =>
+            patch({
+              targetCompanies: draft.targetCompanies.includes(value)
+                ? draft.targetCompanies.filter((entry) => entry !== value)
+                : [...draft.targetCompanies, value],
+            })
+          }
         />
         <div className={styles.row} style={{ marginTop: 8 }}>
           <Input
@@ -499,9 +694,12 @@ export function Step4({ draft, patch }: StepProps) {
 
   return (
     <>
-      <Field label={`What you are into (max ${LIMITS.interests})`}>
+      <Field label={`What you are into · ${draft.interests.length} of ${LIMITS.interests}`}>
         <SelectGrid
-          options={INTERESTS}
+          options={[
+            ...INTERESTS,
+            ...draft.interests.filter((entry) => !INTERESTS.includes(entry as never)),
+          ]}
           selected={draft.interests}
           disabled={() => draft.interests.length >= LIMITS.interests}
           onToggle={(value) =>
@@ -548,7 +746,7 @@ export function Step4({ draft, patch }: StepProps) {
         />
       </Field>
 
-      <Field label="Short bio">
+      <Field label="Short bio (optional)">
         <textarea
           className={styles.textarea}
           value={draft.bio}
@@ -581,18 +779,20 @@ export function Step5({
     <>
       {steps
         .filter((entry) => entry.step <= 4)
-        .map((entry) => (
-          <a key={entry.step} href={`/onboarding/${entry.step}`} className={styles.reviewRow}>
-            <span className={styles.reviewLabel}>{NAMES[entry.step]}</span>
-            <span
-              className={`${styles.reviewState} ${
-                entry.status === 'Complete' ? styles.reviewDone : ''
-              }`}
-            >
-              {entry.status}
-            </span>
-          </a>
-        ))}
+        .map((entry) => {
+          const done = entry.status === 'Complete';
+          return (
+            // Continue on the step this opens comes straight back here once every
+            // section is green, so a review-time fix does not restart the walk.
+            <a key={entry.step} href={`/onboarding/${entry.step}`} className={styles.reviewRow}>
+              <span className={styles.reviewLabel}>{NAMES[entry.step]}</span>
+              <span className={`${styles.reviewState} ${done ? styles.reviewDone : ''}`}>
+                {done ? '✓ ' : ''}
+                {entry.status}
+              </span>
+            </a>
+          );
+        })}
     </>
   );
 }

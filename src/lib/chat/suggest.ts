@@ -65,7 +65,10 @@ const KEYWORDS = {
   referral: ['refer', 'referral', 'role', 'opening', 'loop', 'interview', 'apply', 'hiring', 'req'],
 } as const;
 
-function lastFrom(messages: readonly Message[], predicate: (m: Message) => boolean): Message | null {
+function lastFrom(
+  messages: readonly Message[],
+  predicate: (m: Message) => boolean,
+): Message | null {
   for (let i = messages.length - 1; i >= 0; i -= 1) {
     const message = messages[i];
     if (message && predicate(message)) return message;
@@ -109,15 +112,24 @@ function openers(context: SuggestContext): Suggestion[] {
 
 function strengthen(): Suggestion[] {
   return [
-    { text: 'To make it concrete: I am targeting product roles and can share a one-pager.', rule: 'strengthen' },
+    {
+      text: 'To make it concrete: I am targeting product roles and can share a one-pager.',
+      rule: 'strengthen',
+    },
     { text: 'No rush at all — happy to work around your week.', rule: 'strengthen' },
-    { text: 'If it is easier, I can send three specific questions instead of a call.', rule: 'strengthen' },
+    {
+      text: 'If it is easier, I can send three specific questions instead of a call.',
+      rule: 'strengthen',
+    },
   ];
 }
 
 function meetingIntent(): Suggestion[] {
   return [
-    { text: 'Yes — a 30-minute coffee would be great. Want me to pick a spot?', rule: 'meeting-intent' },
+    {
+      text: 'Yes — a 30-minute coffee would be great. Want me to pick a spot?',
+      rule: 'meeting-intent',
+    },
     { text: 'I am free most mornings this week. What suits you?', rule: 'meeting-intent' },
     { text: 'Happy to do a call instead if that is easier.', rule: 'meeting-intent' },
   ];
@@ -125,16 +137,28 @@ function meetingIntent(): Suggestion[] {
 
 function workPortfolio(): Suggestion[] {
   return [
-    { text: 'Here is the case study I am proudest of — happy to walk you through it.', rule: 'work-portfolio' },
-    { text: 'Thank you. What stood out, and what would you have pushed on?', rule: 'work-portfolio' },
+    {
+      text: 'Here is the case study I am proudest of — happy to walk you through it.',
+      rule: 'work-portfolio',
+    },
+    {
+      text: 'Thank you. What stood out, and what would you have pushed on?',
+      rule: 'work-portfolio',
+    },
     { text: 'I would love your read on which of these to lead with.', rule: 'work-portfolio' },
   ];
 }
 
 function referralLoop(): Suggestion[] {
   return [
-    { text: 'That would mean a lot. What do you need from me to make the referral easy?', rule: 'referral-loop' },
-    { text: 'Happy to send a short blurb you can paste straight into the form.', rule: 'referral-loop' },
+    {
+      text: 'That would mean a lot. What do you need from me to make the referral easy?',
+      rule: 'referral-loop',
+    },
+    {
+      text: 'Happy to send a short blurb you can paste straight into the form.',
+      rule: 'referral-loop',
+    },
     { text: 'What does the loop look like from the inside?', rule: 'referral-loop' },
   ];
 }

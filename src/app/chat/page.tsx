@@ -68,9 +68,7 @@ export default function MatchesPage() {
 
   return (
     <AppShell>
-      {matches.length === 0 ? (
-        <p className={styles.empty}>No matches yet. Try the deck.</p>
-      ) : null}
+      {matches.length === 0 ? <p className={styles.empty}>No matches yet. Try the deck.</p> : null}
 
       <div className={styles.list}>
         {matches.map((match) => {

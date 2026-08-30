@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canPublish, gateForStep, statusForStep } from '@/lib/onboarding/gates';
+import { allStepsComplete, canPublish, gateForStep, statusForStep } from '@/lib/onboarding/gates';
 import { emptyProfile, type Profile } from '@/lib/schemas/profile';
 import { PHOTO_SLOTS } from '@/lib/refdata/constants';
 
@@ -19,7 +19,11 @@ function profile(overrides: Partial<Profile> = {}): Profile {
   return { ...emptyProfile(), ...overrides };
 }
 
-const step1Complete = profile({ ...withPhotos(), headline: 'Product Designer', city: 'Austin, TX' });
+const step1Complete = profile({
+  ...withPhotos(),
+  headline: 'Product Designer',
+  city: 'Austin, TX',
+});
 
 describe('step 1 — 3 photos, headline, city', () => {
   it('fails on an empty profile and says what to do first', () => {
@@ -51,14 +55,12 @@ describe('step 2 — mode selection', () => {
   });
 });
 
-describe('step 2 — working: company, title, industry, years, one door', () => {
+describe('step 2 — working: company, title, industry', () => {
   const complete = profile({
     mode: 'working',
     company: 'Figma',
     role: 'Product Designer',
-    industry: 'Software',
-    years: '4-6',
-    referCompanies: ['Notion'],
+    industry: ['Information Technology'],
   });
 
   it('passes when complete', () => {
@@ -68,68 +70,73 @@ describe('step 2 — working: company, title, industry, years, one door', () => 
   it.each([
     ['company', { company: '' }],
     ['role', { role: '' }],
-    ['industry', { industry: '' }],
-    ['years', { years: '' as const }],
-    ['referCompanies', { referCompanies: [] }],
+    ['industry', { industry: [] }],
   ])('fails when %s is missing', (id, override) => {
     const result = gateForStep(2, { ...complete, ...override });
     expect(result.ok).toBe(false);
     expect(result.missing).toContain(id);
   });
+
+  it('does not require a function, years, or a door', () => {
+    const bare = { ...complete, lane: [], years: '' as const, referCompanies: [] };
+    expect(gateForStep(2, bare).ok).toBe(true);
+  });
 });
 
-describe('step 2 — student: a school and a function', () => {
-  it('accepts a school added in step 1', () => {
+describe('step 2 — student: school and graduation, both required', () => {
+  it('accepts a school added in step 1, graduation year and all', () => {
     const p = profile({
       mode: 'student',
-      lane: 'Design',
       schools: [{ name: 'UT Austin', course: 'MBA', year: '2028' }],
     });
     expect(gateForStep(2, p).ok).toBe(true);
   });
 
-  it('accepts the inline school field instead', () => {
-    const p = profile({ mode: 'student', lane: 'Design', school2: 'UT Austin' });
+  it('accepts the inline fields instead', () => {
+    const p = profile({ mode: 'student', school2: 'UT Austin', gradYear: '2028' });
     expect(gateForStep(2, p).ok).toBe(true);
   });
 
   it('fails with no school at all', () => {
-    const result = gateForStep(2, profile({ mode: 'student', lane: 'Design' }));
-    expect(result.missing).toEqual(['school']);
+    const result = gateForStep(2, profile({ mode: 'student' }));
+    expect(result.missing).toEqual(['school', 'gradYear']);
   });
 
-  it('does not require years or industry', () => {
-    const p = profile({ mode: 'student', lane: 'Design', school2: 'UT Austin', years: '' });
-    expect(gateForStep(2, p).ok).toBe(true);
+  it('fails with a school but no graduation year', () => {
+    const result = gateForStep(2, profile({ mode: 'student', school2: 'UT Austin' }));
+    expect(result.missing).toEqual(['gradYear']);
+  });
+
+  it('does not ask a student for industry, company or function', () => {
+    const p = profile({ mode: 'student', school2: 'UT Austin', gradYear: '2028' });
+    expect(gateForStep(2, { ...p, company: '', industry: [], lane: [] }).ok).toBe(true);
   });
 });
 
-describe('step 2 — looking out: recent company, function, years', () => {
-  const complete = profile({
-    mode: 'looking',
-    company: 'DoorDash',
-    lane: 'Product',
-    years: '7-10',
-  });
+describe('step 2 — looking out: most recent company and title only', () => {
+  const complete = profile({ mode: 'looking', company: 'DoorDash', role: 'Senior PM' });
 
   it('passes when complete', () => {
     expect(gateForStep(2, complete).ok).toBe(true);
   });
 
-  it('does not require a title, unlike the working branch', () => {
-    expect(gateForStep(2, { ...complete, role: '' }).ok).toBe(true);
+  it.each([
+    ['company', { company: '' }],
+    ['role', { role: '' }],
+  ])('fails when %s is missing', (id, override) => {
+    expect(gateForStep(2, { ...complete, ...override }).missing).toContain(id);
   });
 
-  it('does not require a door company, unlike the working branch', () => {
-    expect(gateForStep(2, { ...complete, referCompanies: [] }).ok).toBe(true);
+  it('asks for nothing else', () => {
+    const bare = { ...complete, lane: [], industry: [], years: '' as const, referCompanies: [] };
+    expect(gateForStep(2, bare).ok).toBe(true);
   });
 });
 
-describe('step 3 — one industry, one role, one target company', () => {
+describe('step 3 — one industry and one role, both required', () => {
   const complete = profile({
-    industries: ['Software'],
-    lanes: ['Product'],
-    targetCompanies: ['Notion'],
+    industries: ['Information Technology'],
+    lanes: ['Engineering/Product Development'],
   });
 
   it('passes when complete', () => {
@@ -139,20 +146,31 @@ describe('step 3 — one industry, one role, one target company', () => {
   it.each([
     ['industries', { industries: [] }],
     ['lanes', { lanes: [] }],
-    ['targetCompanies', { targetCompanies: [] }],
   ])('fails when %s is empty', (id, override) => {
     expect(gateForStep(3, { ...complete, ...override }).missing).toContain(id);
   });
+
+  it('does not require a target company', () => {
+    expect(gateForStep(3, { ...complete, targetCompanies: [] }).ok).toBe(true);
+  });
 });
 
-describe('steps 4 and 5 — nothing required', () => {
-  it('lets an untouched step 4 through', () => {
-    expect(gateForStep(4, profile()).ok).toBe(true);
+describe('step 4 — everything but the bio', () => {
+  const complete = profile({ interests: ['Coffee'], openTo: ['Referrals'] });
+
+  it('no longer lets an untouched step 4 through', () => {
+    const result = gateForStep(4, profile());
+    expect(result.ok).toBe(false);
+    expect(result.missing).toEqual(['interests', 'openTo']);
   });
 
-  it('reports step 4 as skipped when untouched, complete when filled', () => {
-    expect(statusForStep(4, profile())).toBe('Skipped');
-    expect(statusForStep(4, profile({ bio: 'Hi' }))).toBe('Complete');
+  it('passes with interests and openTo, and an empty bio', () => {
+    expect(gateForStep(4, { ...complete, bio: '' }).ok).toBe(true);
+  });
+
+  it('reports the review status from the same gate', () => {
+    expect(statusForStep(4, profile())).toBe('Needs work');
+    expect(statusForStep(4, complete)).toBe('Complete');
   });
 
   it('labels step 5 as Publish', () => {
@@ -166,16 +184,16 @@ describe('publishing', () => {
     mode: 'working',
     company: 'Figma',
     role: 'Product Designer',
-    industry: 'Software',
-    years: '4-6',
-    referCompanies: ['Notion'],
-    industries: ['Software'],
-    lanes: ['Product'],
-    targetCompanies: ['Notion'],
+    industry: ['Information Technology'],
+    industries: ['Information Technology'],
+    lanes: ['Engineering/Product Development'],
+    interests: ['Coffee'],
+    openTo: ['Referrals'],
   });
 
-  it('requires steps 1 through 3 to pass', () => {
+  it('requires steps 1 through 4 to pass', () => {
     expect(canPublish(publishable).ok).toBe(true);
+    expect(allStepsComplete(publishable)).toBe(true);
   });
 
   it('reports the earliest unmet requirement', () => {
@@ -184,7 +202,10 @@ describe('publishing', () => {
     expect(result.label).toBe('Choose your city');
   });
 
-  it('does not require step 4', () => {
-    expect(canPublish({ ...publishable, bio: '', interests: [], openTo: [] }).ok).toBe(true);
+  it('now requires step 4 as well', () => {
+    const result = canPublish({ ...publishable, interests: [], openTo: [] });
+    expect(result.ok).toBe(false);
+    expect(result.label).toBe('Pick what you are into');
+    expect(allStepsComplete({ ...publishable, interests: [] })).toBe(false);
   });
 });

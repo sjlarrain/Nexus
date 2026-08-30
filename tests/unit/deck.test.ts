@@ -57,7 +57,9 @@ describe('scoring', () => {
   });
 
   it('ignores doors at companies I am not targeting', () => {
-    expect(explain(viewer, candidate('a', { referCompanies: ['Wendys'] }), NOW).doorOverlap).toBe(0);
+    expect(explain(viewer, candidate('a', { referCompanies: ['Wendys'] }), NOW).doorOverlap).toBe(
+      0,
+    );
   });
 
   it('matches company names case-insensitively', () => {
@@ -100,7 +102,11 @@ describe('scoring', () => {
   });
 
   it('ranks a door above a shared city, since a referral beats convenience', () => {
-    const doorFar = explain(viewer, candidate('a', { referCompanies: ['Notion'], city: 'Austin, TX' }), NOW);
+    const doorFar = explain(
+      viewer,
+      candidate('a', { referCompanies: ['Notion'], city: 'Austin, TX' }),
+      NOW,
+    );
     const noDoorLocal = explain(viewer, candidate('b', { city: 'San Francisco, CA' }), NOW);
     expect(doorFar.total).toBeGreaterThan(noDoorLocal.total);
   });
@@ -124,10 +130,10 @@ describe('scoring', () => {
 
 describe('filters', () => {
   const person = candidate('a', {
-    industry: 'Software',
-    industries: ['Fintech'],
-    lane: 'Product Design',
-    lanes: ['Product Management'],
+    industry: ['Information Technology'],
+    industries: ['Financials'],
+    lane: ['Engineering/Product Development'],
+    lanes: ['Marketing'],
     city: 'Austin, TX',
     direction: 'refer',
   });
@@ -137,13 +143,13 @@ describe('filters', () => {
   });
 
   it('matches the current industry or a wanted one', () => {
-    expect(passesFilters(person, { industries: ['Software'] })).toBe(true);
-    expect(passesFilters(person, { industries: ['Fintech'] })).toBe(true);
-    expect(passesFilters(person, { industries: ['Biotech'] })).toBe(false);
+    expect(passesFilters(person, { industries: ['Information Technology'] })).toBe(true);
+    expect(passesFilters(person, { industries: ['Financials'] })).toBe(true);
+    expect(passesFilters(person, { industries: ['Health Care'] })).toBe(false);
   });
 
   it('matches the current function or a targeted one', () => {
-    expect(passesFilters(person, { lanes: ['Product Design'] })).toBe(true);
+    expect(passesFilters(person, { lanes: ['Engineering/Product Development'] })).toBe(true);
     expect(passesFilters(person, { lanes: ['Sales'] })).toBe(false);
   });
 
@@ -193,9 +199,14 @@ describe('rankDeck', () => {
   it('keeps strong candidates ahead of weak ones despite the shuffle', () => {
     const many = [
       ...Array.from({ length: 5 }, (_, i) =>
-        candidate(`strong-${i}`, { referCompanies: ['Notion', 'Linear', 'Stripe'], direction: 'refer' }),
+        candidate(`strong-${i}`, {
+          referCompanies: ['Notion', 'Linear', 'Stripe'],
+          direction: 'refer',
+        }),
       ),
-      ...Array.from({ length: 5 }, (_, i) => candidate(`weak-${i}`, { direction: 'looking' }, daysAgo(20))),
+      ...Array.from({ length: 5 }, (_, i) =>
+        candidate(`weak-${i}`, { direction: 'looking' }, daysAgo(20)),
+      ),
     ];
     const ranked = rankDeck(viewer, many, { now: NOW, seed: 3, bandSize: 2 });
     expect(ranked.slice(0, 5).every((c) => c.uid.startsWith('strong'))).toBe(true);

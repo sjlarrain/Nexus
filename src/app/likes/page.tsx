@@ -26,7 +26,8 @@ export default function LikesPage() {
   const fetchLikes = useCallback(async (): Promise<LikeCard[]> => {
     const response = await fetch('/api/likes');
     const body: unknown = await response.json();
-    if (!response.ok) throw new Error((body as { error?: string }).error ?? 'Could not load likes.');
+    if (!response.ok)
+      throw new Error((body as { error?: string }).error ?? 'Could not load likes.');
     return (body as { likes: LikeCard[] }).likes;
   }, []);
 

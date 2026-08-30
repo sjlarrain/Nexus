@@ -72,10 +72,7 @@ async function testSimultaneousMutualYes(): Promise<void> {
   const [a, b] = await Promise.all([makeUser('race-a'), makeUser('race-b')]);
 
   // The actual race: both requests in flight before either has committed.
-  const [first, second] = await Promise.all([
-    recordSwipe(a, b, 'yes'),
-    recordSwipe(b, a, 'yes'),
-  ]);
+  const [first, second] = await Promise.all([recordSwipe(a, b, 'yes'), recordSwipe(b, a, 'yes')]);
 
   const matched = [first, second].filter((r) => r.matched);
   check('exactly one side reports the match', matched.length === 1, `${matched.length} did`);

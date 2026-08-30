@@ -11,7 +11,11 @@ async function run(): Promise<void> {
 
   try {
     const users = await adminAuth().listUsers(1);
-    checks.push({ name: 'Auth', ok: true, detail: `reachable, ${users.users.length} user(s) so far` });
+    checks.push({
+      name: 'Auth',
+      ok: true,
+      detail: `reachable, ${users.users.length} user(s) so far`,
+    });
   } catch (error) {
     checks.push({ name: 'Auth', ok: false, detail: (error as Error).message });
   }
@@ -25,7 +29,9 @@ async function run(): Promise<void> {
     checks.push({
       name: 'Firestore',
       ok: false,
-      detail: notCreated ? 'database not created yet — Firebase console > Firestore > Create database' : message,
+      detail: notCreated
+        ? 'database not created yet — Firebase console > Firestore > Create database'
+        : message,
     });
   }
 
@@ -35,7 +41,9 @@ async function run(): Promise<void> {
       name: 'Storage',
       ok: exists,
       optional: true,
-      detail: exists ? 'bucket reachable' : 'no bucket (needs the Blaze plan) — photos fall back to URLs',
+      detail: exists
+        ? 'bucket reachable'
+        : 'no bucket (needs the Blaze plan) — photos fall back to URLs',
     });
   } catch (error) {
     checks.push({ name: 'Storage', ok: false, optional: true, detail: (error as Error).message });

@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import {
-  COURSE_TYPES,
   DIRECTIONS,
   HELP_KINDS,
   LIMITS,
@@ -30,16 +29,18 @@ export type Photo = z.infer<typeof photoSchema>;
 
 export const schoolSchema = z.object({
   name: trimmed(120).min(1),
-  course: z.enum(COURSE_TYPES),
+  /**
+   * One of COURSE_TYPES, or whatever the user typed after choosing "Other" — the
+   * course chips are suggestions, not a closed set (docs/decisions.md).
+   */
+  course: trimmed(60).min(1),
   /** Batch/graduation year, e.g. "2028" — renders as "MBA Class of 2028". */
   year: z.string().regex(/^\d{4}$/, 'Year must be four digits'),
 });
 export type School = z.infer<typeof schoolSchema>;
 
 /** "City, ST" — the spec stores the state in the city string (section 2, step 1). */
-export const citySchema = z
-  .string()
-  .regex(/^.+, [A-Z]{2}$/, 'City must be stored as "City, ST"');
+export const citySchema = z.string().regex(/^.+, [A-Z]{2}$/, 'City must be stored as "City, ST"');
 
 export const profileSchema = z.object({
   // --- step 1: who are you ---
@@ -57,9 +58,16 @@ export const profileSchema = z.object({
   mode: z.enum(MODES).nullable(),
   company: trimmed(120),
   role: trimmed(120),
-  industry: trimmed(80),
-  /** "Function" in the UI; `lane` in the spec's data model. */
-  lane: trimmed(80),
+  /**
+   * Sectors the user works in. Multi-select since the PM's onboarding revision, so
+   * this is an array of GICS sector names plus anything typed into "Other".
+   */
+  industry: z.array(trimmed(80).min(1)).max(LIMITS.industries),
+  /**
+   * "Function" in the UI; `lane` in the spec's data model. Multi-select, and the
+   * options offered are the positions belonging to the selected `industry` values.
+   */
+  lane: z.array(trimmed(80).min(1)).max(LIMITS.roles),
   years: z.union([z.enum(YEARS_BANDS), z.literal('')]),
   /** Student inline fallback when no step-1 school exists. */
   school2: trimmed(120),
@@ -125,8 +133,8 @@ export function emptyProfile(): Profile {
     mode: null,
     company: '',
     role: '',
-    industry: '',
-    lane: '',
+    industry: [],
+    lane: [],
     years: '',
     school2: '',
     gradYear: '',

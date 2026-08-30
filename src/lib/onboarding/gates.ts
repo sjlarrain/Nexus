@@ -43,43 +43,48 @@ const hasAllPhotos = (p: Profile): boolean => {
 /** A student satisfies the school requirement from step 1 or the inline field. */
 const hasSchool = (p: Profile): boolean => p.schools.length > 0 || p.school2.trim().length > 0;
 
+/** Graduation year, autopopulated from the step-1 school unless edited inline. */
+const hasGradYear = (p: Profile): boolean =>
+  p.gradYear.trim().length > 0 || (p.schools[0]?.year.trim().length ?? 0) > 0;
+
 const step1: Requirement[] = [
   { id: 'photos', label: `Add ${LIMITS.photos} photos`, met: hasAllPhotos },
   { id: 'headline', label: 'Add a headline', met: (p) => p.headline.trim().length > 0 },
   { id: 'city', label: 'Choose your city', met: (p) => p.city.trim().length > 0 },
 ];
 
+/**
+ * Company, Title and Industry only. Function, years and doors are all optional since
+ * the PM's onboarding revision — a card that names where someone sits is enough to
+ * publish, and the rest sharpens the match rather than gating it.
+ */
 const step2Working: Requirement[] = [
   { id: 'company', label: 'Add your company', met: (p) => p.company.trim().length > 0 },
   { id: 'role', label: 'Add your title', met: (p) => p.role.trim().length > 0 },
-  { id: 'industry', label: 'Pick an industry', met: (p) => p.industry.trim().length > 0 },
-  { id: 'years', label: 'Pick your years of experience', met: (p) => p.years.length > 0 },
-  {
-    id: 'referCompanies',
-    label: 'Pick at least one company you can open a door at',
-    met: (p) => p.referCompanies.length > 0,
-  },
+  { id: 'industry', label: 'Pick an industry', met: (p) => p.industry.length > 0 },
 ];
 
+/** Students answer two questions, and both are required. */
 const step2Student: Requirement[] = [
   { id: 'school', label: 'Add your school', met: hasSchool },
-  { id: 'lane', label: 'Pick a function', met: (p) => p.lane.trim().length > 0 },
+  { id: 'gradYear', label: 'Add your graduation year', met: hasGradYear },
 ];
 
+/** Someone looking out is asked for their most recent seat and nothing else. */
 const step2Looking: Requirement[] = [
   { id: 'company', label: 'Add your most recent company', met: (p) => p.company.trim().length > 0 },
-  { id: 'lane', label: 'Pick a function', met: (p) => p.lane.trim().length > 0 },
-  { id: 'years', label: 'Pick your years of experience', met: (p) => p.years.length > 0 },
+  { id: 'role', label: 'Add your most recent title', met: (p) => p.role.trim().length > 0 },
 ];
 
 const step3: Requirement[] = [
   { id: 'industries', label: 'Pick an industry', met: (p) => p.industries.length > 0 },
   { id: 'lanes', label: 'Pick a role', met: (p) => p.lanes.length > 0 },
-  {
-    id: 'targetCompanies',
-    label: 'Pick a target company',
-    met: (p) => p.targetCompanies.length > 0,
-  },
+];
+
+/** Everything on "a little colour" is required now except the bio. */
+const step4: Requirement[] = [
+  { id: 'interests', label: 'Pick what you are into', met: (p) => p.interests.length > 0 },
+  { id: 'openTo', label: 'Pick what you are open to', met: (p) => p.openTo.length > 0 },
 ];
 
 /**
@@ -108,8 +113,7 @@ export function gateForStep(step: number, profile: Profile): GateResult {
     case 3:
       return evaluate(step3, profile);
     case 4:
-      // Skippable by design (spec section 3).
-      return { ok: true, label: CONTINUE, missing: [] };
+      return evaluate(step4, profile);
     case 5:
       return { ok: true, label: 'Publish', missing: [] };
     default:
@@ -119,7 +123,7 @@ export function gateForStep(step: number, profile: Profile): GateResult {
 
 /** Every gate that must pass before a profile may be published (BACKLOG E3.6). */
 export function canPublish(profile: Profile): GateResult {
-  for (const step of [1, 2, 3]) {
+  for (const step of [1, 2, 3, 4]) {
     const result = gateForStep(step, profile);
     if (!result.ok) return result;
   }
@@ -127,13 +131,13 @@ export function canPublish(profile: Profile): GateResult {
 }
 
 /** Step summary status for the step-5 review rows (spec section 2, step 5). */
-export type StepStatus = 'Complete' | 'Needs work' | 'Skipped';
+export type StepStatus = 'Complete' | 'Needs work';
 
 export function statusForStep(step: number, profile: Profile): StepStatus {
-  if (step === 4) {
-    const touched =
-      profile.interests.length > 0 || profile.openTo.length > 0 || profile.bio.trim().length > 0;
-    return touched ? 'Complete' : 'Skipped';
-  }
   return gateForStep(step, profile).ok ? 'Complete' : 'Needs work';
+}
+
+/** True when every section of the review list is green (BACKLOG E3.9). */
+export function allStepsComplete(profile: Profile): boolean {
+  return [1, 2, 3, 4].every((step) => gateForStep(step, profile).ok);
 }

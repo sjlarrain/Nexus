@@ -1,12 +1,11 @@
 import { emptyProfile, type Profile } from '@/lib/schemas/profile';
-import { PHOTO_SLOTS, LIMITS, type HelpKind } from '@/lib/refdata/constants';
+import { PHOTO_SLOTS, LIMITS, YEARS_BANDS, type HelpKind } from '@/lib/refdata/constants';
 import { CITIES_BY_STATE, formatCity, type StateCode } from '@/lib/refdata/locations';
 import {
-  FUNCTIONS,
-  INDUSTRIES,
+  FIXTURE_TITLES,
+  GICS_SECTORS,
   INTERESTS,
-  TITLES_BY_FUNCTION,
-  type FunctionName,
+  positionsForSectors,
 } from '@/lib/refdata/taxonomy';
 import { industryForCompany, knownCompanies, suggestCompanies } from '@/lib/refdata/peer-map';
 import { OPEN_TO } from '@/lib/refdata/constants';
@@ -52,16 +51,79 @@ function pickSome<T>(random: Random, items: readonly T[], min: number, max: numb
 }
 
 const FIRST_NAMES = [
-  'Jordan', 'Daniel', 'Priya', 'Marcus', 'Elena', 'Wei', 'Amara', 'Diego', 'Nina', 'Omar',
-  'Sofia', 'Andre', 'Leila', 'Tomas', 'Grace', 'Rahul', 'Maya', 'Caleb', 'Yuki', 'Isabel',
-  'Noah', 'Zara', 'Felix', 'Aisha', 'Lucas', 'Hana', 'Ethan', 'Camila', 'Ivan', 'Rosa',
-  'Malik', 'Anya', 'Theo', 'Nadia', 'Sam', 'Farah', 'Julian', 'Mei', 'Adrian', 'Tessa',
+  'Jordan',
+  'Daniel',
+  'Priya',
+  'Marcus',
+  'Elena',
+  'Wei',
+  'Amara',
+  'Diego',
+  'Nina',
+  'Omar',
+  'Sofia',
+  'Andre',
+  'Leila',
+  'Tomas',
+  'Grace',
+  'Rahul',
+  'Maya',
+  'Caleb',
+  'Yuki',
+  'Isabel',
+  'Noah',
+  'Zara',
+  'Felix',
+  'Aisha',
+  'Lucas',
+  'Hana',
+  'Ethan',
+  'Camila',
+  'Ivan',
+  'Rosa',
+  'Malik',
+  'Anya',
+  'Theo',
+  'Nadia',
+  'Sam',
+  'Farah',
+  'Julian',
+  'Mei',
+  'Adrian',
+  'Tessa',
 ];
 
 const LAST_NAMES = [
-  'Reyes', 'Okafor', 'Shah', 'Bennett', 'Rossi', 'Zhang', 'Okonkwo', 'Alvarez', 'Petrova', 'Haddad',
-  'Moreau', 'Silva', 'Nakamura', 'Brennan', 'Osei', 'Kapoor', 'Lindqvist', 'Duarte', 'Kim', 'Ferreira',
-  'Novak', 'Ahmed', 'Weber', 'Diallo', 'Costa', 'Tanaka', 'Murphy', 'Vargas', 'Sokolov', 'Mendes',
+  'Reyes',
+  'Okafor',
+  'Shah',
+  'Bennett',
+  'Rossi',
+  'Zhang',
+  'Okonkwo',
+  'Alvarez',
+  'Petrova',
+  'Haddad',
+  'Moreau',
+  'Silva',
+  'Nakamura',
+  'Brennan',
+  'Osei',
+  'Kapoor',
+  'Lindqvist',
+  'Duarte',
+  'Kim',
+  'Ferreira',
+  'Novak',
+  'Ahmed',
+  'Weber',
+  'Diallo',
+  'Costa',
+  'Tanaka',
+  'Murphy',
+  'Vargas',
+  'Sokolov',
+  'Mendes',
 ];
 
 const HEADLINE_TEMPLATES = [
@@ -104,8 +166,21 @@ const HUB_CITIES: readonly [string, string][] = [
 ];
 
 const SCHOOLS = [
-  'UT Austin', 'Stanford', 'UC Berkeley', 'NYU', 'Columbia', 'Michigan', 'Georgia Tech',
-  'Northwestern', 'UCLA', 'Carnegie Mellon', 'Duke', 'Cornell', 'USC', 'Wharton', 'MIT',
+  'UT Austin',
+  'Stanford',
+  'UC Berkeley',
+  'NYU',
+  'Columbia',
+  'Michigan',
+  'Georgia Tech',
+  'Northwestern',
+  'UCLA',
+  'Carnegie Mellon',
+  'Duke',
+  'Cornell',
+  'USC',
+  'Wharton',
+  'MIT',
 ];
 
 function fill(template: string, values: Record<string, string>): string {
@@ -135,29 +210,40 @@ export function generateFixture(index: number, seed = 1): Fixture {
   const uid = `demo-${String(index).padStart(3, '0')}`;
 
   const hub = random() < 0.5 ? pick(random, HUB_CITIES) : null;
-  const state = hub ? (hub[1] as StateCode) : (pick(random, Object.keys(CITIES_BY_STATE)) as StateCode);
+  const state = hub
+    ? (hub[1] as StateCode)
+    : (pick(random, Object.keys(CITIES_BY_STATE)) as StateCode);
   const city = hub ? hub[0] : formatCity(pick(random, CITIES_BY_STATE[state]), state);
 
-  const lane: FunctionName = pick(random, FUNCTIONS);
-  const titles = TITLES_BY_FUNCTION[lane] ?? [lane];
-  const role = pick(random, titles);
   const company = pick(random, knownCompanies());
+  // The employer decides the sector, and the sector decides which positions are on
+  // offer — the same narrowing the onboarding form does.
   const industry = industryForCompany(company);
-  const years = pick(random, ['0-1', '2-3', '4-6', '7-10', '10+'] as const);
+  const lane = pick(random, positionsForSectors([industry]));
+  const role = pick(random, FIXTURE_TITLES);
+  const years = pick(random, YEARS_BANDS);
 
   // Roughly: 60% working, 20% student, 20% looking out — a deck that skews toward
   // people who can actually open a door.
   const roll = random();
   const mode = roll < 0.6 ? 'working' : roll < 0.8 ? 'student' : 'looking';
 
-  const doors = mode === 'student' ? [] : suggestCompanies(company, [], 3 + Math.floor(random() * 3));
+  // Onboarding only offers the current employer as a door, so the population must
+  // look the same — a seeded person cannot hold doors a real one could not enter.
+  const doors = mode === 'working' ? [company] : [];
   const will: Record<string, HelpKind> = {};
   for (const door of doors) {
     will[door] = random() < 0.6 ? 'Happy to refer' : 'Happy to chat';
   }
 
   const direction =
-    mode === 'looking' ? 'looking' : mode === 'student' ? 'looking' : random() < 0.4 ? 'both' : 'refer';
+    mode === 'looking'
+      ? 'looking'
+      : mode === 'student'
+        ? 'looking'
+        : random() < 0.4
+          ? 'both'
+          : 'refer';
 
   const headline = fill(pick(random, HEADLINE_TEMPLATES), {
     company,
@@ -166,6 +252,8 @@ export function generateFixture(index: number, seed = 1): Fixture {
     role,
     years,
   }).slice(0, LIMITS.headlineChars);
+
+  const wantedSectors = pickSome(random, GICS_SECTORS, 1, LIMITS.industries);
 
   const schools =
     mode === 'student' || random() < 0.5
@@ -191,17 +279,19 @@ export function generateFixture(index: number, seed = 1): Fixture {
       stateName: state,
       schools,
       mode,
-      company,
+      // A student is not asked for a company, title, industry or function any more,
+      // and someone looking out is asked for their most recent seat and nothing else.
+      company: mode === 'student' ? '' : company,
       role: mode === 'student' ? '' : role,
-      industry,
-      lane,
-      years: mode === 'student' ? '' : years,
+      industry: mode === 'working' ? [industry] : [],
+      lane: mode === 'working' ? [lane] : [],
+      years: mode === 'working' ? years : '',
       school2: '',
-      gradYear: '',
-      referCompanies: doors,
-      will,
-      industries: pickSome(random, INDUSTRIES, 1, LIMITS.industries),
-      lanes: pickSome(random, FUNCTIONS, 1, LIMITS.roles),
+      gradYear: mode === 'student' ? (schools[0]?.year ?? '') : '',
+      referCompanies: mode === 'working' ? doors : [],
+      will: mode === 'working' ? will : {},
+      industries: wantedSectors,
+      lanes: pickSome(random, positionsForSectors(wantedSectors), 1, LIMITS.roles),
       targetCompanies: suggestCompanies(company, [], 3),
       interests: pickSome(random, INTERESTS, 3, LIMITS.interests),
       openTo: pickSome(random, OPEN_TO, 2, 4),
@@ -241,21 +331,15 @@ export function demoViewer(): Fixture {
       mode: 'working',
       company: 'Figma',
       role: 'Product Designer',
-      industry: 'Software',
-      lane: 'Product Design',
-      years: '4-6',
-      referCompanies: ['Notion', 'Canva', 'Adobe', 'Linear', 'Airtable'],
-      will: {
-        Notion: 'Happy to refer',
-        Canva: 'Happy to refer',
-        Adobe: 'Happy to chat',
-        Linear: 'Happy to refer',
-        Airtable: 'Happy to chat',
-      },
-      industries: ['Software', 'Consumer', 'Enterprise SaaS'],
-      lanes: ['Product Design', 'Product Management'],
-      targetCompanies: ['Notion', 'Linear', 'Stripe'],
-      interests: ['Coffee', 'Climbing', 'Film', 'Pottery'],
+      industry: ['Information Technology'],
+      lane: ['Engineering/Product Development'],
+      years: '5-10',
+      referCompanies: ['Figma'],
+      will: { Figma: 'Happy to refer' },
+      industries: ['Information Technology', 'Communication Services'],
+      lanes: ['Engineering/Product Development', 'Marketing'],
+      targetCompanies: ['Notion', 'Linear', 'DoorDash'],
+      interests: ['Coffee', 'Cycling', 'Film', 'Photography'],
       openTo: ['Referrals', 'Mock interviews', 'Career advice'],
       bio: 'Designer at Figma. I got my first job through a warm intro and I have been paying it back since.',
       direction: 'both',
@@ -282,20 +366,15 @@ export function demoCounterpart(): Fixture {
       mode: 'working',
       company: 'DoorDash',
       role: 'Senior Product Manager',
-      industry: 'Marketplaces',
-      lane: 'Product Management',
-      years: '7-10',
-      referCompanies: ['Uber', 'Instacart', 'Gopuff', 'Lyft'],
-      will: {
-        Uber: 'Happy to refer',
-        Instacart: 'Happy to refer',
-        Gopuff: 'Happy to chat',
-        Lyft: 'Happy to chat',
-      },
-      industries: ['Marketplaces', 'Consumer', 'Logistics & Supply Chain'],
-      lanes: ['Product Management', 'Strategy'],
+      industry: ['Consumer Discretionary'],
+      lane: ['Marketing & Brand Management'],
+      years: '5-10',
+      referCompanies: ['DoorDash'],
+      will: { DoorDash: 'Happy to refer' },
+      industries: ['Consumer Discretionary', 'Information Technology'],
+      lanes: ['Marketing & Brand Management', 'Engineering/Product Development'],
       targetCompanies: ['Figma', 'Notion', 'Stripe'],
-      interests: ['Running', 'Cooking', 'Podcasts', 'Basketball'],
+      interests: ['Running', 'Cooking', 'Basketball', 'Travel'],
       openTo: ['Referrals', 'Career advice', 'Industry intel'],
       bio: 'PM at DoorDash working on merchant tools. Ask me how referrals really work inside a big company.',
       direction: 'refer',

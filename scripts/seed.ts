@@ -19,7 +19,7 @@ import {
 } from '@/lib/fixtures/generate';
 import { matchIdFor, pairKey, swipeIdFor } from '@/lib/matching/match-id';
 import type { Booking, Message, Venue } from '@/lib/schemas/entities';
-import { INDUSTRIES, FUNCTIONS, INTERESTS } from '@/lib/refdata/taxonomy';
+import { GICS_SECTORS, INTERESTS, POSITIONS_BY_SECTOR, allPositions } from '@/lib/refdata/taxonomy';
 import { CITIES_BY_STATE, STATE_NAMES } from '@/lib/refdata/locations';
 import { PEER_MAP, FALLBACK_COMPANIES } from '@/lib/refdata/peer-map';
 import { COURSE_TYPES, OPEN_TO, YEARS_BANDS } from '@/lib/refdata/constants';
@@ -35,10 +35,38 @@ const days = (n: number) => n * 86_400_000;
 
 /** Demo cafes, so booking works before a venue provider is chosen (BACKLOG E10.1). */
 const VENUES: Venue[] = [
-  { id: 'venue-sightglass', name: 'Sightglass Coffee', address: '270 7th St, San Francisco, CA', source: 'nearby', lat: 37.7766, lng: -122.4088 },
-  { id: 'venue-blue-bottle', name: 'Blue Bottle Coffee', address: '66 Mint St, San Francisco, CA', source: 'nearby', lat: 37.7823, lng: -122.4076 },
-  { id: 'venue-ritual', name: 'Ritual Coffee Roasters', address: '1026 Valencia St, San Francisco, CA', source: 'nearby', lat: 37.7565, lng: -122.4212 },
-  { id: 'venue-four-barrel', name: 'Four Barrel Coffee', address: '375 Valencia St, San Francisco, CA', source: 'nearby', lat: 37.7671, lng: -122.4221 },
+  {
+    id: 'venue-sightglass',
+    name: 'Sightglass Coffee',
+    address: '270 7th St, San Francisco, CA',
+    source: 'nearby',
+    lat: 37.7766,
+    lng: -122.4088,
+  },
+  {
+    id: 'venue-blue-bottle',
+    name: 'Blue Bottle Coffee',
+    address: '66 Mint St, San Francisco, CA',
+    source: 'nearby',
+    lat: 37.7823,
+    lng: -122.4076,
+  },
+  {
+    id: 'venue-ritual',
+    name: 'Ritual Coffee Roasters',
+    address: '1026 Valencia St, San Francisco, CA',
+    source: 'nearby',
+    lat: 37.7565,
+    lng: -122.4212,
+  },
+  {
+    id: 'venue-four-barrel',
+    name: 'Four Barrel Coffee',
+    address: '375 Valencia St, San Francisco, CA',
+    source: 'nearby',
+    lat: 37.7671,
+    lng: -122.4221,
+  },
 ];
 
 async function deleteWhere(collection: string, field: string, value: unknown): Promise<number> {
@@ -157,14 +185,19 @@ async function writeMatch(
   const participants = pairKey(a, b);
   const last = thread.at(-1);
 
-  await db.collection('matches').doc(matchId).set({
-    participants,
-    createdAt: now - days(2),
-    lastMessage: last ? { text: last.text, at: now - minutes(last.minutesAgo), from: last.from } : null,
-    bookingId,
-    closedAt: null,
-    seeded: true,
-  });
+  await db
+    .collection('matches')
+    .doc(matchId)
+    .set({
+      participants,
+      createdAt: now - days(2),
+      lastMessage: last
+        ? { text: last.text, at: now - minutes(last.minutesAgo), from: last.from }
+        : null,
+      bookingId,
+      closedAt: null,
+      seeded: true,
+    });
 
   // Both directions of the swipe, so the deck never re-shows a matched person.
   const batch = db.batch();
@@ -190,7 +223,11 @@ async function writeMatch(
       seeded: true,
     };
     batch.set(
-      db.collection('matches').doc(matchId).collection('messages').doc(`msg-${String(index).padStart(3, '0')}`),
+      db
+        .collection('matches')
+        .doc(matchId)
+        .collection('messages')
+        .doc(`msg-${String(index).padStart(3, '0')}`),
       doc,
     );
   }
@@ -203,11 +240,27 @@ async function writeScenarios(population: Fixture[]): Promise<void> {
   // 1. A live match with history, and a cafe named in the thread. This is what makes
   //    rule 1 of suggest() fire and pins "Mentioned in your chat" on the booking screen.
   const chatty: Thread[] = [
-    { from: DEMO_COUNTERPART_UID, text: 'Jordan! Your Figma work on the plugin surface is great.', minutesAgo: 600 },
-    { from: DEMO_VIEWER_UID, text: 'Thank you — that project ate a whole quarter. How is merchant tooling going?', minutesAgo: 540 },
-    { from: DEMO_COUNTERPART_UID, text: 'Busy in a good way. We are hiring a designer actually.', minutesAgo: 480 },
+    {
+      from: DEMO_COUNTERPART_UID,
+      text: 'Jordan! Your Figma work on the plugin surface is great.',
+      minutesAgo: 600,
+    },
+    {
+      from: DEMO_VIEWER_UID,
+      text: 'Thank you — that project ate a whole quarter. How is merchant tooling going?',
+      minutesAgo: 540,
+    },
+    {
+      from: DEMO_COUNTERPART_UID,
+      text: 'Busy in a good way. We are hiring a designer actually.',
+      minutesAgo: 480,
+    },
     { from: DEMO_VIEWER_UID, text: 'I would love to hear more about that role.', minutesAgo: 420 },
-    { from: DEMO_COUNTERPART_UID, text: 'Want to grab a coffee? Sightglass Coffee is close to both of us.', minutesAgo: 45 },
+    {
+      from: DEMO_COUNTERPART_UID,
+      text: 'Want to grab a coffee? Sightglass Coffee is close to both of us.',
+      minutesAgo: 45,
+    },
   ];
   const chattyMatch = await writeMatch(DEMO_VIEWER_UID, DEMO_COUNTERPART_UID, chatty, null);
 
@@ -250,15 +303,18 @@ async function writeScenarios(population: Fixture[]): Promise<void> {
     }
   }
 
-  process.stdout.write(`  scenarios: chat+cafe (${chattyMatch.slice(0, 8)}), fresh match, booked coffee\n`);
+  process.stdout.write(
+    `  scenarios: chat+cafe (${chattyMatch.slice(0, 8)}), fresh match, booked coffee\n`,
+  );
 }
 
 /** Option lists the client reads once and caches (BACKLOG E4.5). */
 async function writeRefdata(): Promise<void> {
   const batch = db.batch();
   batch.set(db.collection('refdata').doc('taxonomy'), {
-    industries: INDUSTRIES,
-    functions: FUNCTIONS,
+    industries: GICS_SECTORS,
+    functions: allPositions(),
+    positionsBySector: POSITIONS_BY_SECTOR,
     interests: INTERESTS,
     openTo: OPEN_TO,
     courseTypes: COURSE_TYPES,

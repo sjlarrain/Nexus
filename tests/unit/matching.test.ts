@@ -74,7 +74,7 @@ describe('company suggestions', () => {
 
   it('knows every company it can suggest', () => {
     expect(knownCompanies()).toContain('Figma');
-    expect(industryForCompany('Stripe')).toBe('Fintech');
+    expect(industryForCompany('Stripe')).toBe('Financials');
   });
 });
 

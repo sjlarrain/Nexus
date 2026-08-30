@@ -17,9 +17,30 @@ function context(overrides: Partial<SuggestContext> = {}): SuggestContext {
 }
 
 const VENUES: Venue[] = [
-  { id: 'v1', name: 'Sightglass Coffee', address: '270 7th St', source: 'nearby', lat: null, lng: null },
-  { id: 'v2', name: 'Blue Bottle Coffee', address: '66 Mint St', source: 'nearby', lat: null, lng: null },
-  { id: 'v3', name: 'Ritual Coffee Roasters', address: '1026 Valencia St', source: 'nearby', lat: null, lng: null },
+  {
+    id: 'v1',
+    name: 'Sightglass Coffee',
+    address: '270 7th St',
+    source: 'nearby',
+    lat: null,
+    lng: null,
+  },
+  {
+    id: 'v2',
+    name: 'Blue Bottle Coffee',
+    address: '66 Mint St',
+    source: 'nearby',
+    lat: null,
+    lng: null,
+  },
+  {
+    id: 'v3',
+    name: 'Ritual Coffee Roasters',
+    address: '1026 Valencia St',
+    source: 'nearby',
+    lat: null,
+    lng: null,
+  },
 ];
 
 /** The six rules of spec section 1, in the order they are meant to fire. */
@@ -35,7 +56,9 @@ describe('rule 1 — cafe named in the thread, not yet booked', () => {
   });
 
   it('beats rule 5 even though the message also has meeting keywords', () => {
-    const result = suggest(context({ messages: [msg(THEM, 'free for coffee at Ritual Coffee Roasters?')] }));
+    const result = suggest(
+      context({ messages: [msg(THEM, 'free for coffee at Ritual Coffee Roasters?')] }),
+    );
     expect(result[0]?.rule).toBe('cafe');
   });
 
@@ -125,7 +148,10 @@ describe('cafe detection', () => {
   });
 
   it('finds an unknown cafe by its suffix', () => {
-    const mention = findCafeMention([msg(THEM, 'There is a Gaslight Coffee Roasters nearby')], VENUES);
+    const mention = findCafeMention(
+      [msg(THEM, 'There is a Gaslight Coffee Roasters nearby')],
+      VENUES,
+    );
     expect(mention?.name).toBe('Gaslight Coffee Roasters');
     expect(mention?.venueId).toBeNull();
   });

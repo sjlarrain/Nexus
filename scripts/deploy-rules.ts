@@ -17,13 +17,14 @@ type ServiceAccount = { project_id: string; client_email: string; private_key: s
 const encoded = process.env.FIREBASE_SERVICE_ACCOUNT_B64;
 if (!encoded) throw new Error('FIREBASE_SERVICE_ACCOUNT_B64 is not set.');
 
-const credentials = JSON.parse(
-  Buffer.from(encoded, 'base64').toString('utf8'),
-) as ServiceAccount;
+const credentials = JSON.parse(Buffer.from(encoded, 'base64').toString('utf8')) as ServiceAccount;
 
 const auth = new GoogleAuth({
   credentials,
-  scopes: ['https://www.googleapis.com/auth/cloud-platform', 'https://www.googleapis.com/auth/firebase'],
+  scopes: [
+    'https://www.googleapis.com/auth/cloud-platform',
+    'https://www.googleapis.com/auth/firebase',
+  ],
 });
 
 const API = 'https://firebaserules.googleapis.com/v1';
@@ -59,7 +60,10 @@ async function deploy(releaseId: string, file: string, name: string): Promise<vo
   } catch (error) {
     // Already exists on every deploy after the first.
     if (!(error as Error).message.includes('409')) throw error;
-    await call(`${release}`, { method: 'PATCH', body: JSON.stringify({ release: { name: release, rulesetName: ruleset.name } }) });
+    await call(`${release}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ release: { name: release, rulesetName: ruleset.name } }),
+    });
     process.stdout.write(`  ${releaseId}: updated -> ${ruleset.name.split('/').pop()}\n`);
   }
 }

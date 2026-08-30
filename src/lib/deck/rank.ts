@@ -123,13 +123,13 @@ export function passesFilters(candidate: Candidate, filters: DeckFilters): boole
 
   if (filters.industries?.length) {
     const wanted = lower(filters.industries);
-    const theirs = lower([profile.industry, ...profile.industries]);
+    const theirs = lower([...profile.industry, ...profile.industries]);
     if (![...theirs].some((value) => wanted.has(value))) return false;
   }
 
   if (filters.lanes?.length) {
     const wanted = lower(filters.lanes);
-    const theirs = lower([profile.lane, ...profile.lanes]);
+    const theirs = lower([...profile.lane, ...profile.lanes]);
     if (![...theirs].some((value) => wanted.has(value))) return false;
   }
 

@@ -57,7 +57,9 @@ async function showDeck(): Promise<void> {
 
   process.stdout.write(`\nDECK for ${viewer.first} ${viewer.last} (${roleLineFor(viewer)})\n`);
   process.stdout.write(`  targeting: ${viewer.targetCompanies.join(', ')}\n`);
-  process.stdout.write(`  ${candidates.length} candidates after excluding ${swiped.size} already swiped\n\n`);
+  process.stdout.write(
+    `  ${candidates.length} candidates after excluding ${swiped.size} already swiped\n\n`,
+  );
 
   for (const card of rankDeck(viewer, candidates, { seed: 1 }).slice(0, 8)) {
     const s = card.score;
@@ -76,11 +78,7 @@ async function showDeck(): Promise<void> {
 }
 
 async function showLikes(): Promise<void> {
-  const snapshot = await db
-    .collection('inbox')
-    .doc(DEMO_VIEWER_UID)
-    .collection('likes')
-    .get();
+  const snapshot = await db.collection('inbox').doc(DEMO_VIEWER_UID).collection('likes').get();
 
   process.stdout.write(`LIKES waiting for ${DEMO_VIEWER_UID}: ${snapshot.size}\n`);
 

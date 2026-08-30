@@ -49,19 +49,18 @@ describe('roleLineFor', () => {
     expect(roleLineFor(p)).toBe('Product Designer · Figma · San Francisco, CA');
   });
 
-  it('leads with function and school for a student', () => {
+  it('leads with the school for a student, who has no title or function', () => {
     const p = profile({
       mode: 'student',
-      lane: 'Product Management',
       schools: [{ name: 'Michigan', course: 'MBA', year: '2028' }],
       city: 'Ann Arbor, MI',
     });
-    expect(roleLineFor(p)).toBe('Product Management · Michigan · Ann Arbor, MI');
+    expect(roleLineFor(p)).toBe('Michigan · Ann Arbor, MI');
   });
 
   it('falls back to the inline school field for a student', () => {
-    const p = profile({ mode: 'student', lane: 'Design', school2: 'NYU', city: 'New York, NY' });
-    expect(roleLineFor(p)).toBe('Design · NYU · New York, NY');
+    const p = profile({ mode: 'student', school2: 'NYU', city: 'New York, NY' });
+    expect(roleLineFor(p)).toBe('NYU · New York, NY');
   });
 
   it('marks a past employer for someone looking out', () => {
@@ -96,7 +95,7 @@ describe('badgeFor', () => {
 describe('tagsFor', () => {
   it('deduplicates case-insensitively and respects the limit', () => {
     const p = profile({
-      industry: 'Software',
+      industry: ['Software'],
       lanes: ['Product Design', 'software'],
       interests: ['Coffee', 'Climbing', 'Film', 'Pottery', 'Running'],
     });
@@ -105,7 +104,7 @@ describe('tagsFor', () => {
   });
 
   it('skips empty values', () => {
-    expect(tagsFor(profile({ industry: '', lanes: [''], interests: ['Coffee'] }))).toEqual([
+    expect(tagsFor(profile({ industry: [], lanes: [''], interests: ['Coffee'] }))).toEqual([
       'Coffee',
     ]);
   });
@@ -162,11 +161,11 @@ describe('deckLineFor', () => {
         mode: 'working',
         role: 'Senior PM',
         company: 'DoorDash',
-        years: '4-6',
+        years: '5-10',
         city: 'New York, NY',
       }),
     );
-    expect(card).toBe('Senior PM · DoorDash · 4-6 yrs');
+    expect(card).toBe('Senior PM · DoorDash · 5-10 yrs');
   });
 
   it('never contains the city', () => {
@@ -178,16 +177,14 @@ describe('deckLineFor', () => {
 
   it('marks a former employer when someone is looking', () => {
     const line = deckLineFor(
-      profile({ mode: 'looking', role: 'PM', company: 'DoorDash', years: '4-6' }),
+      profile({ mode: 'looking', role: 'PM', company: 'DoorDash', years: '5-10' }),
     );
-    expect(line).toBe('PM · ex-DoorDash · 4-6 yrs');
+    expect(line).toBe('PM · ex-DoorDash · 5-10 yrs');
   });
 
-  it('leads a student with their course and school', () => {
-    const line = deckLineFor(
-      profile({ mode: 'student', lane: 'Design', school2: 'NYU', gradYear: '2027' }),
-    );
-    expect(line).toBe('Design · NYU · 2027');
+  it('leads a student with their school and graduation year', () => {
+    const line = deckLineFor(profile({ mode: 'student', school2: 'NYU', gradYear: '2027' }));
+    expect(line).toBe('NYU · 2027');
   });
 
   it('drops tenure when it is unset, without a dangling separator', () => {

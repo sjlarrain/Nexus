@@ -37,7 +37,9 @@ export default function MatchMoment({
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/matches/${matchId}/venues`)
-      .then((response) => (response.ok ? (response.json() as Promise<{ suggestedSlots: number[] }>) : null))
+      .then((response) =>
+        response.ok ? (response.json() as Promise<{ suggestedSlots: number[] }>) : null,
+      )
       .then((body) => {
         if (cancelled || !body) return;
         setSlots(body.suggestedSlots);

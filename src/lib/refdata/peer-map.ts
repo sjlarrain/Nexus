@@ -1,4 +1,4 @@
-import { INDUSTRIES, type Industry } from '@/lib/refdata/taxonomy';
+import { GICS_SECTORS, type GicsSector } from '@/lib/refdata/taxonomy';
 
 /**
  * Company peer map — spec section 2, step 2 ("Where you can open a door") and
@@ -99,51 +99,56 @@ export const FALLBACK_COMPANIES: readonly string[] = [
 ];
 
 /** Companies grouped by the industry a fixture person at one would plausibly claim. */
-export const COMPANY_INDUSTRY: Record<string, Industry> = {
-  Figma: 'Software',
-  Notion: 'Software',
-  Canva: 'Software',
-  Adobe: 'Software',
-  Linear: 'Software',
-  Airtable: 'Enterprise SaaS',
-  DoorDash: 'Marketplaces',
-  Uber: 'Marketplaces',
-  Lyft: 'Marketplaces',
-  Airbnb: 'Travel & Hospitality',
-  Instacart: 'Marketplaces',
-  Stripe: 'Fintech',
-  Plaid: 'Fintech',
-  Brex: 'Fintech',
-  Ramp: 'Fintech',
-  Robinhood: 'Fintech',
-  Coinbase: 'Fintech',
-  Google: 'Software',
-  Meta: 'Consumer',
-  Amazon: 'E-commerce',
-  Microsoft: 'Enterprise SaaS',
-  Apple: 'Consumer',
-  Netflix: 'Media & Entertainment',
-  Spotify: 'Media & Entertainment',
-  LinkedIn: 'Software',
-  Salesforce: 'Enterprise SaaS',
-  Slack: 'Enterprise SaaS',
-  Atlassian: 'Enterprise SaaS',
-  Snowflake: 'Enterprise SaaS',
-  Databricks: 'AI / ML',
-  Datadog: 'Enterprise SaaS',
-  Twilio: 'Software',
-  OpenAI: 'AI / ML',
-  Anthropic: 'AI / ML',
-  'Scale AI': 'AI / ML',
-  McKinsey: 'Consulting',
-  Bain: 'Consulting',
-  BCG: 'Consulting',
-  'Goldman Sachs': 'Investment Banking',
-  'J.P. Morgan': 'Investment Banking',
-  Blackstone: 'Private Equity',
-  Oscar: 'Healthcare',
-  Ro: 'Healthcare',
-  'Flatiron Health': 'Healthcare',
+/**
+ * Which GICS sector each known employer sits in. GICS is coarse by design, so a
+ * software company and a bank both land in one of eleven buckets — that is the
+ * taxonomy the product now uses end to end (docs/decisions.md).
+ */
+export const COMPANY_INDUSTRY: Record<string, GicsSector> = {
+  Figma: 'Information Technology',
+  Notion: 'Information Technology',
+  Canva: 'Information Technology',
+  Adobe: 'Information Technology',
+  Linear: 'Information Technology',
+  Airtable: 'Information Technology',
+  DoorDash: 'Consumer Discretionary',
+  Uber: 'Industrials',
+  Lyft: 'Industrials',
+  Airbnb: 'Consumer Discretionary',
+  Instacart: 'Consumer Staples',
+  Stripe: 'Financials',
+  Plaid: 'Financials',
+  Brex: 'Financials',
+  Ramp: 'Financials',
+  Robinhood: 'Financials',
+  Coinbase: 'Financials',
+  Google: 'Communication Services',
+  Meta: 'Communication Services',
+  Amazon: 'Consumer Discretionary',
+  Microsoft: 'Information Technology',
+  Apple: 'Information Technology',
+  Netflix: 'Communication Services',
+  Spotify: 'Communication Services',
+  LinkedIn: 'Communication Services',
+  Salesforce: 'Information Technology',
+  Slack: 'Information Technology',
+  Atlassian: 'Information Technology',
+  Snowflake: 'Information Technology',
+  Databricks: 'Information Technology',
+  Datadog: 'Information Technology',
+  Twilio: 'Information Technology',
+  OpenAI: 'Information Technology',
+  Anthropic: 'Information Technology',
+  'Scale AI': 'Information Technology',
+  McKinsey: 'Industrials',
+  Bain: 'Industrials',
+  BCG: 'Industrials',
+  'Goldman Sachs': 'Financials',
+  'J.P. Morgan': 'Financials',
+  Blackstone: 'Financials',
+  Oscar: 'Health Care',
+  Ro: 'Health Care',
+  'Flatiron Health': 'Health Care',
 };
 
 /** Every company the app knows about, deduplicated. */
@@ -187,6 +192,6 @@ export function suggestCompanies(
   return out.slice(0, Math.max(limit, selected.length));
 }
 
-export function industryForCompany(company: string): Industry {
-  return COMPANY_INDUSTRY[company.trim()] ?? INDUSTRIES[0];
+export function industryForCompany(company: string): GicsSector {
+  return COMPANY_INDUSTRY[company.trim()] ?? GICS_SECTORS[0];
 }

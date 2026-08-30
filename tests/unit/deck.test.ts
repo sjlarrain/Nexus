@@ -142,6 +142,25 @@ describe('filters', () => {
     expect(passesFilters(person, {})).toBe(true);
   });
 
+  /* The college filter matches loosely: people type "Michigan" for the full name. */
+  it('matches a college on the step-1 list', () => {
+    const student = candidate('s1', {
+      schools: [{ name: 'University of Michigan', course: 'MBA', year: '2027' }],
+    });
+    expect(passesFilters(student, { colleges: ['Michigan'] })).toBe(true);
+    expect(passesFilters(student, { colleges: ['Stanford'] })).toBe(false);
+  });
+
+  it('matches the inline student school too', () => {
+    const student = candidate('s2', { schools: [], school2: 'NYU' });
+    expect(passesFilters(student, { colleges: ['nyu'] })).toBe(true);
+  });
+
+  it('excludes someone with no school when a college is asked for', () => {
+    const nobody = candidate('s3', { schools: [], school2: '' });
+    expect(passesFilters(nobody, { colleges: ['Michigan'] })).toBe(false);
+  });
+
   it('matches the current industry or a wanted one', () => {
     expect(passesFilters(person, { industries: ['Information Technology'] })).toBe(true);
     expect(passesFilters(person, { industries: ['Financials'] })).toBe(true);

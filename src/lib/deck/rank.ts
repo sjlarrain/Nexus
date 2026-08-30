@@ -23,6 +23,8 @@ export type DeckFilters = {
   lanes?: readonly string[];
   /** Matches on the stored "City, ST" value. */
   cities?: readonly string[];
+  /** Matches any school on the profile, step-1 list or the student fallback. */
+  colleges?: readonly string[];
   direction?: Direction;
 };
 
@@ -135,6 +137,23 @@ export function passesFilters(candidate: Candidate, filters: DeckFilters): boole
 
   if (filters.cities?.length && !lower(filters.cities).has(profile.city.trim().toLowerCase())) {
     return false;
+  }
+
+  /* Substring rather than equality: people type "Michigan" for "University of
+     Michigan", and a filter nobody can satisfy is worse than a loose one. */
+  if (filters.colleges?.length) {
+    const theirs = [...profile.schools.map((school) => school.name), profile.school2]
+      .map((name) => name.trim().toLowerCase())
+      .filter((name) => name.length > 0);
+
+    const wanted = filters.colleges
+      .map((name) => name.trim().toLowerCase())
+      .filter((name) => name.length > 0);
+
+    const hit = wanted.some((want) =>
+      theirs.some((have) => have.includes(want) || want.includes(have)),
+    );
+    if (!hit) return false;
   }
 
   if (filters.direction && !directionsComplement(filters.direction, profile.direction)) {

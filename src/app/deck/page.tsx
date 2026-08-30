@@ -5,6 +5,12 @@ import AppShell from '@/components/AppShell';
 import ActivityStrip from './activity-strip';
 import MatchMoment from '@/components/MatchMoment';
 import SwipeCard, { SwipeActions, deckClass, emptyClass } from '@/components/SwipeCard';
+import FiltersSheet, {
+  NO_FILTERS,
+  filterSummary,
+  filtersToQuery,
+  type DeckFilterState,
+} from './filters-sheet';
 import { Chip, PillButton } from '@/components/ui';
 import type { Card } from '@/lib/cards/card';
 import type { SwipeAction } from '@/lib/schemas/entities';
@@ -23,19 +29,24 @@ type DeckCard = Card & { score: number };
 export default function DeckPage() {
   const [cards, setCards] = useState<DeckCard[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  /** First load only. Refetching for a filter change must not blank the screen —
+      the filter sheet is open on top of it. */
+  const [ready, setReady] = useState(false);
   const [leaving, setLeaving] = useState<SwipeAction | null>(null);
   const [matched, setMatched] = useState<{ matchId: string; card: Card } | null>(null);
   const [showActivity, setShowActivity] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<DeckFilterState>(NO_FILTERS);
+  const [myCity, setMyCity] = useState('');
 
   const fetchDeck = useCallback(async (): Promise<DeckCard[]> => {
-    const response = await fetch('/api/deck');
+    const response = await fetch(`/api/deck${filtersToQuery(filters)}`);
     const body: unknown = await response.json();
     if (!response.ok) {
       throw new Error((body as { error?: string }).error ?? 'Could not load the deck.');
     }
     return (body as { cards: DeckCard[] }).cards;
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,12 +58,26 @@ export default function DeckPage() {
         if (!cancelled) setError((caught as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setReady(true);
       });
     return () => {
       cancelled = true;
     };
   }, [fetchDeck]);
+
+  // Only so the location filter can offer a city by name rather than "my city".
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/me')
+      .then((response) => (response.ok ? (response.json() as Promise<{ profile: { city: string } }>) : null))
+      .then((body) => {
+        if (!cancelled && body) setMyCity(body.profile.city);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /** Plays the exit animation, then commits the swipe. */
   function intent(action: SwipeAction): void {
@@ -92,7 +117,7 @@ export default function DeckPage() {
     }
   }
 
-  if (loading) {
+  if (!ready) {
     return (
       <AppShell>
         <p className={emptyClass}>Loading the deck…</p>
@@ -119,17 +144,19 @@ export default function DeckPage() {
           <PillButton dot onClick={() => setShowActivity((open) => !open)}>
             Activity
           </PillButton>
-          <PillButton>Filters</PillButton>
+          <PillButton onClick={() => setShowFilters(true)}>Filters</PillButton>
         </>
       }
     >
-      {showActivity ? <ActivityStrip /> : null}
+      {showActivity ? <ActivityStrip onClose={() => setShowActivity(false)} /> : null}
 
-      {/* Filters are display-only until the sheet is built (BACKLOG E15.4). */}
+      {/* The chips say what is on; tapping any of them opens the same sheet. */}
       <div className={styles.filters}>
-        <Chip pill>Any industry</Chip>
-        <Chip pill>Any role</Chip>
-        <Chip pill>Nationwide</Chip>
+        {filterSummary(filters).map((label) => (
+          <button key={label} type="button" onClick={() => setShowFilters(true)}>
+            <Chip pill>{label}</Chip>
+          </button>
+        ))}
       </div>
 
       <div className={deckClass}>
@@ -144,6 +171,15 @@ export default function DeckPage() {
       </div>
 
       {top ? <SwipeActions onIntent={intent} disabled={leaving !== null} /> : null}
+
+      {showFilters ? (
+        <FiltersSheet
+          filters={filters}
+          myCity={myCity}
+          onChange={setFilters}
+          onClose={() => setShowFilters(false)}
+        />
+      ) : null}
 
       {matched ? (
         <MatchMoment

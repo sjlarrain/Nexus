@@ -21,6 +21,7 @@ export async function GET(request: Request) {
       industries: listParam(url, 'industry'),
       lanes: listParam(url, 'lane'),
       cities: listParam(url, 'city'),
+      colleges: listParam(url, 'college'),
       direction:
         direction === 'refer' || direction === 'looking' || direction === 'both'
           ? direction

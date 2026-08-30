@@ -216,9 +216,9 @@ mock shows that the backend cannot yet supply.
       message as its label), 44px touch targets
 - [x] `E15.3` Onboarding steps 1-5 (mock 1g) wired to E3, with the gate running
       client-side so Continue names what is missing as you type
-- [~] `E15.4` Deck (mock 1a): drag thresholds dx ±105 / dy −110 done, exit animation,
-      photo stepper, activity feed. **Filters sheet still to build** — the chips are
-      display-only
+- [x] `E15.4` Deck (mock 1a): drag thresholds dx ±105 / dy −110 done, exit animation,
+      photo stepper, activity feed, and the filters sheet — college, industry, role,
+      location and direction, each one a filter `passesFilters` actually applies
 - [x] `E15.8` Match moment (mock 1d, coffee-first) — chosen slot carries into the
       café screen
 - [x] `E15.5` Likes, match moment, chat with suggested replies, booking, profile

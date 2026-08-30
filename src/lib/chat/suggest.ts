@@ -19,6 +19,13 @@ import { findCafeMention, type CafeMention } from '@/lib/chat/cafe';
 
 export type Suggestion = {
   text: string;
+  /**
+   * The chip label. The chip has room for three or four words; `text` is the whole
+   * message it drops into the composer, where it can be read and edited before it is
+   * sent. The two are deliberately different — a chip that showed the full sentence
+   * would wrap to three lines and still not be the thing you send.
+   */
+  short: string;
   /** Which rule produced it — used by tests and useful for tuning later. */
   rule: SuggestRule;
   /** Rule 1 pins its cafe suggestion above everything else. */
@@ -87,37 +94,72 @@ function name(context: SuggestContext): string {
 
 function cafeSuggestions(mention: CafeMention): Suggestion[] {
   return [
-    { text: `${mention.name} works for me — shall I send some times?`, rule: 'cafe', pinned: true },
-    { text: `Love ${mention.name}. How is Thursday morning?`, rule: 'cafe' },
-    { text: 'Want me to book it for 30 minutes?', rule: 'cafe' },
+    {
+      short: 'Send times',
+      text: `${mention.name} works for me — shall I send some times?`,
+      rule: 'cafe',
+      pinned: true,
+    },
+    {
+      short: 'Suggest Thursday',
+      text: `Love ${mention.name}. How is Thursday morning?`,
+      rule: 'cafe',
+    },
+    { short: 'Offer to book', text: 'Want me to book it for 30 minutes?', rule: 'cafe' },
   ];
 }
 
 function bookedSuggestions(): Suggestion[] {
   return [
-    { text: 'Looking forward to it. Anything you want me to read up on first?', rule: 'booked' },
-    { text: 'I will bring a couple of specific questions rather than winging it.', rule: 'booked' },
-    { text: 'See you there — I will grab a table.', rule: 'booked' },
+    {
+      short: 'Ask what to read',
+      text: 'Looking forward to it. Anything you want me to read up on first?',
+      rule: 'booked',
+    },
+    {
+      short: 'Promise questions',
+      text: 'I will bring a couple of specific questions rather than winging it.',
+      rule: 'booked',
+    },
+    { short: 'Confirm you are coming', text: 'See you there — I will grab a table.', rule: 'booked' },
   ];
 }
 
 function openers(context: SuggestContext): Suggestion[] {
   const them = name(context);
   return [
-    { text: `Hi ${them} — what made you say yes to this one?`, rule: 'openers' },
-    { text: `Hi ${them}, I would love 20 minutes on how you got into your role.`, rule: 'openers' },
-    { text: `Hi ${them} — happy to be useful first. What are you working on?`, rule: 'openers' },
+    {
+      short: 'Why they said yes',
+      text: `Hi ${them} — what made you say yes to this one?`,
+      rule: 'openers',
+    },
+    {
+      short: 'Ask for 20 minutes',
+      text: `Hi ${them}, I would love 20 minutes on how you got into your role.`,
+      rule: 'openers',
+    },
+    {
+      short: 'Offer to help first',
+      text: `Hi ${them} — happy to be useful first. What are you working on?`,
+      rule: 'openers',
+    },
   ];
 }
 
 function strengthen(): Suggestion[] {
   return [
     {
+      short: 'Name your target',
       text: 'To make it concrete: I am targeting product roles and can share a one-pager.',
       rule: 'strengthen',
     },
-    { text: 'No rush at all — happy to work around your week.', rule: 'strengthen' },
     {
+      short: 'Take the pressure off',
+      text: 'No rush at all — happy to work around your week.',
+      rule: 'strengthen',
+    },
+    {
+      short: 'Offer questions instead',
       text: 'If it is easier, I can send three specific questions instead of a call.',
       rule: 'strengthen',
     },
@@ -127,48 +169,95 @@ function strengthen(): Suggestion[] {
 function meetingIntent(): Suggestion[] {
   return [
     {
+      short: 'Say yes to coffee',
       text: 'Yes — a 30-minute coffee would be great. Want me to pick a spot?',
       rule: 'meeting-intent',
     },
-    { text: 'I am free most mornings this week. What suits you?', rule: 'meeting-intent' },
-    { text: 'Happy to do a call instead if that is easier.', rule: 'meeting-intent' },
+    {
+      short: 'Give your mornings',
+      text: 'I am free most mornings this week. What suits you?',
+      rule: 'meeting-intent',
+    },
+    {
+      short: 'Offer a call',
+      text: 'Happy to do a call instead if that is easier.',
+      rule: 'meeting-intent',
+    },
   ];
 }
 
 function workPortfolio(): Suggestion[] {
   return [
     {
+      short: 'Name the project',
       text: 'Here is the case study I am proudest of — happy to walk you through it.',
       rule: 'work-portfolio',
     },
     {
+      short: 'Ask what stood out',
       text: 'Thank you. What stood out, and what would you have pushed on?',
       rule: 'work-portfolio',
     },
-    { text: 'I would love your read on which of these to lead with.', rule: 'work-portfolio' },
+    {
+      short: 'What to lead with',
+      text: 'I would love your read on which of these to lead with.',
+      rule: 'work-portfolio',
+    },
   ];
 }
 
 function referralLoop(): Suggestion[] {
   return [
     {
+      short: 'Ask what they need',
       text: 'That would mean a lot. What do you need from me to make the referral easy?',
       rule: 'referral-loop',
     },
     {
+      short: 'Offer a blurb',
       text: 'Happy to send a short blurb you can paste straight into the form.',
       rule: 'referral-loop',
     },
-    { text: 'What does the loop look like from the inside?', rule: 'referral-loop' },
+    {
+      short: 'Ask about the loop',
+      text: 'What does the loop look like from the inside?',
+      rule: 'referral-loop',
+    },
   ];
 }
 
 function fallback(): Suggestion[] {
   return [
-    { text: 'That is really useful, thank you.', rule: 'fallback' },
-    { text: 'How did you end up on that path?', rule: 'fallback' },
-    { text: 'Anything I can help with on your side?', rule: 'fallback' },
+    { short: 'Say thanks', text: 'That is really useful, thank you.', rule: 'fallback' },
+    { short: 'Ask their path', text: 'How did you end up on that path?', rule: 'fallback' },
+    { short: 'Offer help', text: 'Anything I can help with on your side?', rule: 'fallback' },
   ];
+}
+
+/**
+ * The line above the chips, saying why these three and not others. The mock words it
+ * as a state plus an instruction — "they asked about your work · answer with
+ * specifics" — which is also the honest description of what each rule matched on.
+ */
+export function headlineFor(rule: SuggestRule): string {
+  switch (rule) {
+    case 'cafe':
+      return 'A café came up · offer a time';
+    case 'booked':
+      return 'Coffee is booked · turn up well';
+    case 'openers':
+      return 'First message · make it easy to say yes';
+    case 'strengthen':
+      return 'You spoke last · make the ask concrete';
+    case 'meeting-intent':
+      return 'They want to meet · pick a time';
+    case 'work-portfolio':
+      return 'They asked about your work · answer with specifics';
+    case 'referral-loop':
+      return 'A referral is on the table · make it easy';
+    case 'fallback':
+      return 'Keep it going';
+  }
 }
 
 export function suggest(context: SuggestContext): Suggestion[] {

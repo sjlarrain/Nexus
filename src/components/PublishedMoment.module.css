@@ -98,34 +98,36 @@
 .piece {
   position: absolute;
   top: 0;
-  width: 8px;
-  height: 13px;
-  border-radius: 1.5px;
-  animation: fall var(--duration) linear var(--delay) both;
+  width: 13px;
+  height: 20px;
+  border-radius: 2px;
+  animation: fall var(--duration) cubic-bezier(0.25, 0.5, 0.5, 1) var(--delay) both;
 }
 
 .pieceRound {
-  width: 9px;
-  height: 9px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
 }
 
+/* Two axes on two elements would be cleaner, but a single transform keeps this to
+   one composited property per piece — at seventy pieces that matters. */
 @keyframes fall {
   0% {
-    transform: translate3d(0, -12vh, 0) rotate(0deg);
+    transform: translate3d(0, -14vh, 0) rotate(0deg) scale(var(--scale));
     opacity: 0;
   }
 
-  10% {
+  8% {
     opacity: 1;
   }
 
-  85% {
+  88% {
     opacity: 1;
   }
 
   100% {
-    transform: translate3d(var(--drift), 104vh, 0) rotate(var(--spin));
+    transform: translate3d(var(--drift), 104vh, 0) rotate(var(--spin)) scale(var(--scale));
     opacity: 0;
   }
 }

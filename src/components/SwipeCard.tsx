@@ -125,7 +125,14 @@ export default function SwipeCard({
             onError={() => setBroken((set) => new Set(set).add(current.url))}
           />
         ) : null}
-        {card.badge ? <Badge className={styles.badge}>{card.badge}</Badge> : null}
+        {/* College left, what they will do right — the two things worth knowing
+            before the photo is even read. */}
+        {card.college || card.helpTag ? (
+          <div className={styles.photoTags}>
+            {card.college ? <span className={styles.collegeTag}>{card.college}</span> : null}
+            {card.helpTag ? <span className={styles.helpTag}>{card.helpTag}</span> : null}
+          </div>
+        ) : null}
         {photos.length > 1 ? (
           <>
             <span className={styles.photoScrim} />
@@ -140,6 +147,13 @@ export default function SwipeCard({
       </div>
 
       <div className={styles.body}>
+        {/* The direction badge moves off the photo, which now belongs to the college
+            and help tags, and reads as the kicker it always was. Dropped when the help
+            tag already says it: "Can refer" twice on one card reads as a bug. */}
+        {card.badge && card.badge !== card.helpTag ? (
+          <Badge className={styles.badge}>{card.badge}</Badge>
+        ) : null}
+
         <div className={styles.nameRow}>
           <h2 className={styles.name}>{card.name}</h2>
           {card.city ? <Meta>{card.city}</Meta> : null}

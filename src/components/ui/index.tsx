@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ComponentPropsWithRef, ReactNode } from 'react';
 import type { GateResult } from '@/lib/onboarding/gates';
 import styles from './ui.module.css';
 
@@ -170,7 +170,9 @@ export function ChipRow({ children }: { children: ReactNode }) {
   return <div className={styles.fieldChips}>{children}</div>;
 }
 
-export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
+/* `ComponentPropsWithRef` rather than `InputHTMLAttributes`: React 19 passes `ref`
+   as an ordinary prop, and the chat composer needs one to focus itself. */
+export function Input({ className, ...rest }: ComponentPropsWithRef<'input'>) {
   return <input {...rest} className={cx(styles.input, className)} />;
 }
 

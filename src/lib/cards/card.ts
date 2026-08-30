@@ -21,6 +21,10 @@ export type Card = {
   headline: string;
   photos: Photo[];
   badge: string | null;
+  /** Top-left of the deck photo: where they studied. */
+  college: string | null;
+  /** Top-right of the deck photo: what they will actually do for someone. */
+  helpTag: string | null;
   tags: string[];
   direction: Direction;
   doors: string[];
@@ -50,6 +54,27 @@ export function badgeFor(profile: Pick<Profile, 'direction' | 'mode'>): string |
     case 'both':
       return 'Open both ways';
   }
+}
+
+/**
+ * The school shown on the deck card. Step 1's list is the source of truth; the flat
+ * field is the student fallback filled in on step 2 (docs/decisions.md).
+ */
+export function collegeFor(profile: Pick<Profile, 'schools' | 'school2'>): string | null {
+  const name = (profile.schools[0]?.name ?? profile.school2).trim();
+  return name.length > 0 ? name : null;
+}
+
+/**
+ * What this person will actually do, from the per-company answers on step 2 — not
+ * from `direction`, which is only what they came here for. A referral is the stronger
+ * offer, so one "Happy to refer" outranks any number of "Happy to chat".
+ */
+export function helpTagFor(profile: Pick<Profile, 'will'>): string | null {
+  const kinds = Object.values(profile.will);
+  if (kinds.includes('Happy to refer')) return 'Can refer';
+  if (kinds.includes('Happy to chat')) return 'Happy to chat';
+  return null;
 }
 
 /**
@@ -118,6 +143,8 @@ export function toCard(uid: string, profile: Profile): Card {
     headline: profile.headline,
     photos: profile.photos,
     badge: badgeFor(profile),
+    college: collegeFor(profile),
+    helpTag: helpTagFor(profile),
     tags: tagsFor(profile),
     direction: profile.direction,
     doors: profile.referCompanies,

@@ -1,13 +1,13 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import AppShell from '@/components/AppShell';
 import { Input, hatchClass } from '@/components/ui';
 import { firebaseAuth, firebaseDb } from '@/lib/firebase/client';
-import { suggest } from '@/lib/chat/suggest';
+import { headlineFor, suggest } from '@/lib/chat/suggest';
 import { shortDate } from '@/lib/chat/when';
 import type { Booking, Message, Venue } from '@/lib/schemas/entities';
 import type { Card } from '@/lib/cards/card';
@@ -54,6 +54,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [me, setMe] = useState<string | null>(null);
   // The mock lets the starter row be dismissed; it comes back on the next visit.
   const [startersHidden, setStartersHidden] = useState(false);
+  const composer = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const [threadResponse, meResponse] = await Promise.all([
@@ -136,6 +137,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       knownVenues: thread.venues,
     });
   }, [thread, me, messages]);
+
+  // Every suggestion in a set comes from one rule, so the first one names the set.
+  const headline = suggestions[0] ? headlineFor(suggestions[0].rule) : '';
 
   async function send(text: string) {
     const trimmed = text.trim();
@@ -246,9 +250,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
         {suggestions.length > 0 && !startersHidden ? (
           <div className={styles.starters}>
             <div className={styles.startersHead}>
-              <span className={styles.startersLabel}>
-                {thread.booked ? 'Say something' : 'Openers'}
-              </span>
+              <span className={styles.startersLabel}>{headline}</span>
               <button
                 type="button"
                 className={styles.startersHide}
@@ -263,10 +265,15 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   key={suggestion.text}
                   type="button"
                   disabled={sending}
-                  onClick={() => void send(suggestion.text)}
+                  /* Fills the composer rather than sending: the whole point of a
+                     suggestion is that you read it, change a word, and own it. */
+                  onClick={() => {
+                    setDraft(suggestion.text);
+                    composer.current?.focus();
+                  }}
                   className={`${styles.starter} ${suggestion.pinned ? styles.starterPinned : ''}`}
                 >
-                  {suggestion.text}
+                  {suggestion.short}
                 </button>
               ))}
             </div>
@@ -281,6 +288,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           }}
         >
           <Input
+            ref={composer}
             className={styles.composerInput}
             value={draft}
             placeholder="Write your own message…"

@@ -18,20 +18,26 @@ const DISMISS_MS = 5000;
 /** Piece colours, from the token palette in src/app/tokens.css. */
 const CONFETTI_COLOURS = ['#e9b23c', '#3f6b4a', '#8a5a2b', '#14120f', '#f5e4b6'];
 
-const PIECE_COUNT = 18;
+const PIECE_COUNT = 70;
 
 /**
  * Deterministic rather than random: the burst looks the same every time, and there is
  * no server/client mismatch to reason about if this ever renders during hydration.
+ *
+ * The spread numbers are coprime-ish multiples so the pieces do not fall in visible
+ * columns or in step with each other. Everything lands inside three seconds — the
+ * longest delay plus the longest duration is 0.6 + 2.4.
  */
 const PIECES = Array.from({ length: PIECE_COUNT }, (_, index) => ({
   left: (index * 37) % 97,
-  drift: ((index % 4) - 1.5) * 30,
-  spin: index % 2 === 0 ? 520 : -430,
-  delay: (index % 6) * 0.13,
-  duration: 2.7 + (index % 5) * 0.22,
+  drift: (((index * 13) % 9) - 4) * 22,
+  spin: (index % 2 === 0 ? 1 : -1) * (400 + ((index * 53) % 420)),
+  delay: ((index * 7) % 13) * 0.05,
+  duration: 1.8 + ((index * 11) % 7) * 0.1,
   colour: CONFETTI_COLOURS[index % CONFETTI_COLOURS.length],
-  round: index % 3 === 0,
+  round: index % 4 === 0,
+  /* Three sizes, so the burst has depth rather than reading as one flat sheet. */
+  scale: 0.75 + ((index * 17) % 5) * 0.22,
 }));
 
 const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
@@ -93,6 +99,7 @@ export default function PublishedMoment({ onDismiss }: { onDismiss: () => void }
                   '--spin': `${piece.spin}deg`,
                   '--delay': `${piece.delay}s`,
                   '--duration': `${piece.duration}s`,
+                  '--scale': `${piece.scale}`,
                 } as CSSProperties
               }
             />

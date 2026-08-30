@@ -36,19 +36,38 @@
   }
 }
 
-/* A bottom sheet, not a callout beside the spot — the first step's spot is the
-   whole card, which can run edge to edge on a real phone and leave no gap to sit
-   in. Same corner treatment as Filters and Activity. */
-.sheet {
+/* The callout sits right below the (possibly capped) spotlight, never over it —
+   see TipsTour.tsx for why the spot itself is capped rather than this box moved
+   somewhere the target can't be seen. */
+.calloutWrap {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 42;
-  max-width: 420px;
-  margin: 0 auto;
-  padding: 18px 18px 26px;
-  border-radius: 22px 22px 0 0;
+  width: min(388px, calc(100vw - 32px));
+}
+
+.arrowUp,
+.arrowDown {
+  display: block;
+  width: 0;
+  height: 0;
+  margin-left: 26px;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+}
+
+.arrowUp {
+  border-bottom: 9px solid var(--paper);
+}
+
+.arrowDown {
+  border-top: 9px solid var(--paper);
+}
+
+.callout {
+  padding: 18px;
+  border-radius: var(--r-card);
   background: var(--paper);
   box-shadow: var(--shadow-card);
   animation: tipsRise 0.28s ease both;

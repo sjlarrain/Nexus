@@ -681,3 +681,28 @@ local tap counter now feeds the seed, so re-tapping cycles to a different placeh
 and each slot gets a small × to remove it outright. This is not photo upload — that is
 still E5, still blocked on the Blaze plan the owner has not opted into (2026-08-28) —
 it is the "add/edit" a placeholder-based slot can honestly offer.
+
+## 2026-08-30 — The tour stops covering what it is pointing at; "Reserve table"
+
+**`TipsTour` drops the bottom sheet — the owner flagged it directly, with a
+screenshot where the callout hid the very card it was describing.** The callout now
+sits beside the spot instead: below it if there is room, above it if there is not but
+the swipe row (scrolled near the bottom) has room up there, or below a *capped* spot
+only for the deck card — the one target taller than the screen either way. Capping
+the spot's top edge instead of its bottom was tried and rejected: it hid the top of
+the card, which is exactly what the first tip is about, to buy room the callout would
+only spend sitting over the app's own header. Each target is scrolled into view first,
+since the card can run taller than the viewport and there is otherwise no guarantee
+any of this fits on screen at once.
+
+**The coffee CTA is "Reserve table"** (in person) or "Send these times" (video —
+"reserve table" makes no sense without one). The note below it lost "and no table is
+held": that phrase directly contradicted a button now saying to reserve one. The
+underlying honesty is unchanged — nothing is charged, this is still propose-then-
+accept with no OpenTable integration — only the wording that was in tension with the
+new label moved.
+
+**The confirmed-coffee card now reads "Mon, Aug 31 · 10:00 AM PDT" and "Blue Bottle
+Coffee · table for 2"**, matching the mock's density without its price. "Table for 2"
+is not a reservation claim, just a true fact — a booking is always exactly the two
+matched participants.

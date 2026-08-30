@@ -13,6 +13,12 @@ export type TourTargets = {
   actions: RefObject<HTMLElement | null>;
 };
 
+/** Generous estimate of the callout's own height, used only to decide how much of a
+    tall target to leave visible above it — see the note below. */
+const CALLOUT_HEIGHT = 210;
+const GAP = 14;
+const MIN_SPOT_HEIGHT = 48;
+
 function measure(el: HTMLElement | null): Rect | null {
   if (!el) return null;
   const box = el.getBoundingClientRect();
@@ -21,21 +27,17 @@ function measure(el: HTMLElement | null): Rect | null {
 
 /**
  * First-run product tour over the deck (docs/mocks/planup-quick-tips.html): a
- * spotlight cut into a dark backdrop, plus a callout, one step per target.
+ * spotlight ring around the real element, plus a callout beside it — never a fixed
+ * panel that could cover the very thing being pointed at.
  *
- * The spotlight comes from `getBoundingClientRect()` on the real elements rather
- * than the mock's hardcoded pixel values — its 382×812 frame is a fixed
- * presentation board, and this app runs at whatever size the device actually is.
- * The mock's callout sits beside the spot with a pointing arrow, sized to fit the
- * gap its fixed frame leaves; here the first step's spot is the whole card, which
- * on a real phone can run edge to edge and leave no such gap. So the callout is a
- * bottom sheet instead — the same pattern Filters and Activity already use — and
- * only the spotlight ring moves to say what step 1 through 3 is about.
- *
- * Only ever mounted once the deck has already loaded (the caller's own loading
- * gate), so the starting step is decided once, at mount, from whether `?tips=1`
- * is on the URL — how the profile screen's "Replay tips" link asks for it — or
- * this is the first visit.
+ * Each target is scrolled into view first (the deck card is often taller than the
+ * screen), then the callout goes below it if there is room, above it if there is
+ * not but there is room up there instead (the swipe row, scrolled near the bottom),
+ * or — only for something taller than the screen either way, i.e. the card — below
+ * a spot capped to what still fits above the callout. Capping the *top* of the spot
+ * instead was tried and rejected: it hid exactly the part of the card the first tip
+ * is describing, to buy room that would only place the callout over the app's own
+ * header.
  */
 export default function TipsTour({ targets }: { targets: TourTargets }) {
   const router = useRouter();
@@ -47,13 +49,13 @@ export default function TipsTour({ targets }: { targets: TourTargets }) {
 
   const target = TIPS[step - 1]?.target ?? null;
 
-  // Deferred rather than measured synchronously in the effect body, so the
-  // setState call is never direct — a plain macrotask rather than
-  // `requestAnimationFrame`, which a backgrounded tab can pause indefinitely and
-  // this measurement does not depend on paint timing to be correct.
+  // Deferred so the setState is never called synchronously inside the effect body,
+  // and so the scroll (instant, but still a layout pass) settles before measuring.
   useEffect(() => {
     const timer = setTimeout(() => {
-      setRect(measure(target ? targets[target].current : null));
+      const el = target ? targets[target].current : null;
+      el?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      setRect(measure(el));
     }, 0);
     return () => clearTimeout(timer);
   }, [target, targets]);
@@ -88,12 +90,38 @@ export default function TipsTour({ targets }: { targets: TourTargets }) {
   if (!tip) return null;
 
   const pad = 6;
-  const spot = {
-    top: rect.top - pad,
-    left: rect.left - pad,
-    width: rect.width + pad * 2,
-    height: rect.height + pad * 2,
-  };
+  const viewportH = window.innerHeight;
+  const spotTop = rect.top - pad;
+  const spotLeft = rect.left - pad;
+  const spotWidth = rect.width + pad * 2;
+  const spotBottomRaw = rect.top + rect.height + pad;
+
+  const spaceBelow = viewportH - spotBottomRaw;
+  const spaceAbove = spotTop;
+
+  // Three cases, in order: the target fits with room to spare below it, the same
+  // above it, or (a target taller than the screen — the deck card) it doesn't fit
+  // either way, so its bottom edge is capped to leave room for the callout below.
+  // Capping the *top* instead was tried and rejected: it hid exactly the part of
+  // the card the first tip is describing, to buy room that would only place the
+  // callout over the app's own header.
+  let spotBottom = spotBottomRaw;
+  let calloutTop: number;
+  let below: boolean;
+
+  if (spaceBelow >= CALLOUT_HEIGHT + GAP) {
+    calloutTop = spotBottomRaw + GAP;
+    below = true;
+  } else if (spaceAbove >= CALLOUT_HEIGHT + GAP) {
+    calloutTop = spotTop - GAP - CALLOUT_HEIGHT;
+    below = false;
+  } else {
+    spotBottom = Math.max(spotTop + MIN_SPOT_HEIGHT, viewportH - CALLOUT_HEIGHT - GAP);
+    calloutTop = spotBottom + GAP;
+    below = true;
+  }
+
+  const spotHeight = spotBottom - spotTop;
 
   function next(): void {
     if (step >= TIPS.length) finish();
@@ -102,30 +130,40 @@ export default function TipsTour({ targets }: { targets: TourTargets }) {
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true" aria-label="Quick tips">
-      <div className={styles.cutout} style={spot} />
-      <div className={styles.ring} style={spot} />
+      <div
+        className={styles.cutout}
+        style={{ top: spotTop, left: spotLeft, width: spotWidth, height: spotHeight }}
+      />
+      <div
+        className={styles.ring}
+        style={{ top: spotTop, left: spotLeft, width: spotWidth, height: spotHeight }}
+      />
 
-      <div className={styles.sheet}>
-        <div className={styles.head}>
-          <span className={styles.eyebrow}>
-            {tip.eyebrow} · {step} of {TIPS.length}
-          </span>
-          <button type="button" className={styles.skip} onClick={finish}>
-            Skip
-          </button>
-        </div>
-        <p className={styles.title}>{tip.title}</p>
-        <p className={styles.body}>{tip.body}</p>
-        <div className={styles.foot}>
-          <div className={styles.dots}>
-            {TIPS.map((item, index) => (
-              <span key={item.eyebrow} className={index === step - 1 ? styles.dotOn : styles.dot} />
-            ))}
+      <div className={styles.calloutWrap} style={{ top: calloutTop }}>
+        {below ? <span className={styles.arrowUp} /> : null}
+        <div className={styles.callout}>
+          <div className={styles.head}>
+            <span className={styles.eyebrow}>
+              {tip.eyebrow} · {step} of {TIPS.length}
+            </span>
+            <button type="button" className={styles.skip} onClick={finish}>
+              Skip
+            </button>
           </div>
-          <button type="button" className={styles.next} onClick={next}>
-            {step >= TIPS.length ? 'Start swiping' : 'Next'}
-          </button>
+          <p className={styles.title}>{tip.title}</p>
+          <p className={styles.body}>{tip.body}</p>
+          <div className={styles.foot}>
+            <div className={styles.dots}>
+              {TIPS.map((item, index) => (
+                <span key={item.eyebrow} className={index === step - 1 ? styles.dotOn : styles.dot} />
+              ))}
+            </div>
+            <button type="button" className={styles.next} onClick={next}>
+              {step >= TIPS.length ? 'Start swiping' : 'Next'}
+            </button>
+          </div>
         </div>
+        {below ? null : <span className={styles.arrowDown} />}
       </div>
     </div>
   );

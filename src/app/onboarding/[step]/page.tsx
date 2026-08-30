@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Badge, Chip, GhostButton, PrimaryButton, Quote } from '@/components/ui';
@@ -38,6 +38,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [published, setPublished] = useState(false);
+  const step1FlushRef = useRef<(() => Partial<Profile> | undefined) | null>(null);
 
   const fetchMe = useCallback(async (): Promise<MeResponse> => {
     const response = await fetch('/api/me');
@@ -71,15 +72,19 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     setMessage(null);
   }
 
-  async function save(nextStep: number): Promise<boolean> {
+  async function save(nextStep: number, extra?: Partial<Profile>): Promise<boolean> {
     setBusy(true);
     try {
+      // `extra` (e.g. a school typed but never explicitly "Save school"-ed) is folded
+      // in directly rather than relied on via `patch()` + `edits`, since the state
+      // update from `patch()` would not be visible in this closure's `edits` yet.
+      const patch = { ...edits, ...extra };
       // A published user editing their card is not walking through onboarding, and
       // `patchProfile` rejects a step change once `onboarding.completed` is set. So
       // the resume pointer is only sent while it still means something.
       const payload = me?.onboarding.completed
-        ? { patch: edits }
-        : { patch: edits, step: nextStep };
+        ? { patch }
+        : { patch, step: nextStep };
 
       const response = await fetch('/api/profile', {
         method: 'PATCH',
@@ -162,7 +167,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
       <p className={styles.sub}>{heading?.sub}</p>
 
       <div className={styles.body}>
-        {step === 1 ? <Step1 draft={draft} patch={patch} /> : null}
+        {step === 1 ? <Step1 draft={draft} patch={patch} flushRef={step1FlushRef} /> : null}
         {step === 2 ? <Step2 draft={draft} patch={patch} /> : null}
         {step === 3 ? <Step3 draft={draft} patch={patch} /> : null}
         {step === 4 ? <Step4 draft={draft} patch={patch} /> : null}
@@ -227,7 +232,9 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
             gate={gate}
             disabled={busy}
             onClick={async () => {
-              if (await save(nextStep)) router.push(`/onboarding/${nextStep}` as Route);
+              const extra = step === 1 ? (step1FlushRef.current?.() ?? undefined) : undefined;
+              if (extra) patch(extra);
+              if (await save(nextStep, extra)) router.push(`/onboarding/${nextStep}` as Route);
             }}
           />
         )}
@@ -237,7 +244,9 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
         className={styles.saveExit}
         disabled={busy}
         onClick={async () => {
-          if (await save(step)) setMessage('Saved. You can pick this up later.');
+          const extra = step === 1 ? (step1FlushRef.current?.() ?? undefined) : undefined;
+          if (extra) patch(extra);
+          if (await save(step, extra)) setMessage('Saved. You can pick this up later.');
         }}
       >
         Save &amp; exit

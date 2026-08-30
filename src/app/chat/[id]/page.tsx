@@ -8,7 +8,8 @@ import AppShell from '@/components/AppShell';
 import { Input, hatchClass } from '@/components/ui';
 import { firebaseAuth, firebaseDb } from '@/lib/firebase/client';
 import { suggest } from '@/lib/chat/suggest';
-import type { Message, Venue } from '@/lib/schemas/entities';
+import { shortDate } from '@/lib/chat/when';
+import type { Booking, Message, Venue } from '@/lib/schemas/entities';
 import type { Card } from '@/lib/cards/card';
 import styles from '../chat.module.css';
 
@@ -26,11 +27,21 @@ import styles from '../chat.module.css';
 type Thread = {
   matchId: string;
   counterpart: Card;
+  matchedAt: number;
   messages: (Message & { id: string })[];
   booked: boolean;
+  booking: (Booking & { id: string }) | null;
   cafeMentioned: string | null;
   venues: Venue[];
 };
+
+function formatSlot(startsAt: number): string {
+  return new Date(startsAt).toLocaleString(undefined, {
+    weekday: 'long',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: matchId } = use(params);
@@ -41,6 +52,8 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [me, setMe] = useState<string | null>(null);
+  // The mock lets the starter row be dismissed; it comes back on the next visit.
+  const [startersHidden, setStartersHidden] = useState(false);
 
   const load = useCallback(async () => {
     const [threadResponse, meResponse] = await Promise.all([
@@ -184,32 +197,19 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             <h1 className={styles.rowName}>{thread.counterpart.name}</h1>
             <p className={styles.rowRole}>{thread.counterpart.deckLine}</p>
           </div>
+
+          {/* The mock puts the whole coffee flow behind one pill in the header. */}
+          <Link href={`/chat/${matchId}/coffee`} className={styles.coffeePill}>
+            <span className={styles.coffeeMark} aria-hidden="true" />
+            Coffee chat
+          </Link>
         </header>
 
-        {thread.booked ? (
-          <p className={styles.coffeeBar}>
-            Coffee is booked.
-            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
-              See the details
-            </Link>
-          </p>
-        ) : thread.cafeMentioned ? (
-          <p className={styles.coffeeBar}>
-            {thread.cafeMentioned} came up in this chat.
-            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
-              Book it
-            </Link>
-          </p>
-        ) : (
-          <p className={`${styles.coffeeBar} ${styles.coffeeBarIdle}`}>
-            A 30-minute coffee is the point of all this.
-            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
-              Set one up
-            </Link>
-          </p>
-        )}
-
         <div className={styles.messages}>
+          <p className={styles.matched}>
+            You matched {shortDate(thread.matchedAt)}. Nobody can message before a mutual yes.
+          </p>
+
           {messages.map((message) =>
             message.kind === 'system' ? (
               <p key={message.id} className={styles.system}>
@@ -226,21 +226,50 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               </div>
             ),
           )}
+
+          {thread.booking && thread.booking.status === 'confirmed' ? (
+            <div className={styles.confirmed}>
+              <span className={styles.confirmedKicker}>Coffee chat confirmed</span>
+              <p className={styles.confirmedWhen}>
+                {thread.booking.chosenSlot === null
+                  ? 'Time to be picked'
+                  : formatSlot(thread.booking.chosenSlot)}
+              </p>
+              <p className={styles.confirmedWhere}>{thread.booking.venue.name}</p>
+              <Link href={`/chat/${matchId}/coffee`} className={styles.confirmedAction}>
+                See the details
+              </Link>
+            </div>
+          ) : null}
         </div>
 
-        {suggestions.length > 0 ? (
-          <div className={styles.suggestions}>
-            {suggestions.map((suggestion) => (
+        {suggestions.length > 0 && !startersHidden ? (
+          <div className={styles.starters}>
+            <div className={styles.startersHead}>
+              <span className={styles.startersLabel}>
+                {thread.booked ? 'Say something' : 'Openers'}
+              </span>
               <button
-                key={suggestion.text}
                 type="button"
-                disabled={sending}
-                onClick={() => void send(suggestion.text)}
-                className={`${styles.opener} ${suggestion.pinned ? styles.openerPinned : ''}`}
+                className={styles.startersHide}
+                onClick={() => setStartersHidden(true)}
               >
-                {suggestion.text}
+                Hide
               </button>
-            ))}
+            </div>
+            <div className={styles.starterRow}>
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.text}
+                  type="button"
+                  disabled={sending}
+                  onClick={() => void send(suggestion.text)}
+                  className={`${styles.starter} ${suggestion.pinned ? styles.starterPinned : ''}`}
+                >
+                  {suggestion.text}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
 
@@ -252,13 +281,19 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           }}
         >
           <Input
+            className={styles.composerInput}
             value={draft}
-            placeholder="Write a message"
+            placeholder="Write your own message…"
             aria-label="Message"
             onChange={(event) => setDraft(event.target.value)}
           />
-          <button type="submit" className={styles.send} disabled={sending || !draft.trim()}>
-            Send
+          <button
+            type="submit"
+            className={styles.send}
+            aria-label="Send"
+            disabled={sending || !draft.trim()}
+          >
+            →
           </button>
         </form>
       </div>

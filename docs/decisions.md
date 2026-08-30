@@ -527,3 +527,32 @@ the component reads the query (`useSyncExternalStore`) and renders no pieces at 
 The pieces are deterministic rather than random — same burst every time, and nothing
 to reason about if this ever renders during hydration. The burst is held to the 420px
 app frame so on a desktop it falls over the app rather than the board either side.
+
+## 2026-08-29 — The chat prototype supplies structure, not colour
+
+**Decision.** `docs/mocks/planup-chat-prototype.html` is built as the conversation
+list, the thread and the booking screen. Its *layout* is followed; its palette and
+type are not. The app stays on the tokens extracted from `planup-designs.html`.
+
+**Why.** The new prototype is drawn in the palette `docs/planup.md` section 5 asks for
+— Plus Jakarta Sans, terracotta `#a2542a`, ink `#17150f` — which is exactly what
+`src/app/tokens.css` records as having *lost* to the first mock. Adopting it would
+restyle every screen in the app, not just chat, so the owner was asked and chose to
+keep the current tokens. If a later mock lands in the same palette, that is the moment
+to revisit the whole token set rather than let chat drift on its own.
+
+**The bundle is committed with an unpacked copy.** The mock ships as a self-extracting
+page that stores its real markup as JSON inside a `<script type="__bundler/template">`
+tag; `planup-chat-prototype.unpacked.html` is that markup, so the design can be read
+and diffed without running the page.
+
+**What the mock asks for and the app does not do** is listed in `docs/design.md`
+section 5. The short version: no venue prices, no video/in-person toggle, no OpenTable,
+no payment. The booking flow stays propose-then-accept and free, and the confirmed card
+links to the booking screen rather than offering a calendar export that does not exist.
+Same rule as the match moment's missing price range — a control that changes nothing is
+a promise the app cannot keep.
+
+**`loadThread` now returns the booking and the match date.** The thread previously knew
+only *that* something was booked; the confirmed card needs when and where, and the
+"You matched Aug 26" note needs the match's `createdAt`.

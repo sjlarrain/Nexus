@@ -1,6 +1,12 @@
 import { requireUser } from '@/server/auth/session';
 import { route } from '@/server/http/respond';
-import { venuesForMatch, defaultSlots, bookingForMatch, waitingOn } from '@/server/booking/booking';
+import {
+  venuesForMatch,
+  defaultSlots,
+  bookingForMatch,
+  waitingOn,
+  counterpartFirstName,
+} from '@/server/booking/booking';
 
 export const runtime = 'nodejs';
 
@@ -15,13 +21,15 @@ export async function GET(_request: Request, { params }: Params) {
     const user = await requireUser();
     const { id } = await params;
 
-    const [venues, existing] = await Promise.all([
+    const [venues, existing, theirName] = await Promise.all([
       venuesForMatch(user.uid, id),
       bookingForMatch(user.uid, id),
+      counterpartFirstName(user.uid, id),
     ]);
 
     return {
       venues,
+      theirName,
       suggestedSlots: defaultSlots(),
       booking: existing ? { id: existing.id, ...existing.booking } : null,
       waitingOn: existing ? waitingOn(existing.booking, user.uid) : null,

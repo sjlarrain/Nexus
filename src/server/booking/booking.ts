@@ -3,6 +3,7 @@ import { adminDb } from '@/server/firebase/admin';
 import { counterpartOf } from '@/lib/matching/match-id';
 import { findCafeMention, orderVenuesForBooking } from '@/lib/chat/cafe';
 import { postSystemMessage } from '@/server/chat/messages';
+import { profileSchema } from '@/lib/schemas/profile';
 import { badRequest, forbidden, notFound } from '@/server/http/respond';
 import type { Booking, Match, Message, Venue } from '@/lib/schemas/entities';
 
@@ -46,6 +47,24 @@ export async function venuesForMatch(
   const messages = messageDocs.docs.map((doc) => doc.data() as Message);
 
   return orderVenuesForBooking(venues, findCafeMention(messages, venues));
+}
+
+/**
+ * The other person's first name. The booking screen leads with "Book a coffee chat
+ * with <name>" (chat mock), and this is the one thing on that screen the venues
+ * payload did not already carry.
+ */
+export async function counterpartFirstName(uid: string, matchId: string): Promise<string> {
+  const match = await requireMatch(uid, matchId);
+  const person = await adminDb()
+    .collection('users')
+    .doc(counterpartOf(match.participants, uid))
+    .get();
+
+  const data = person.data();
+  if (!data) return 'them';
+  const parsed = profileSchema.safeParse(data);
+  return parsed.success && parsed.data.first.trim().length > 0 ? parsed.data.first : 'them';
 }
 
 export async function proposeBooking(

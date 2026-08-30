@@ -20,21 +20,26 @@
   margin: 0 0 18px;
 }
 
-.sectionLabel {
-  display: block;
-  margin: 18px 0 9px;
+/* The mock labels each section with a mono kicker rather than a heading. */
+.kicker {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 20px 0 9px;
 }
 
 .venue {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
   text-align: left;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 13px 15px;
+  border-radius: 14px;
+  padding: 11px;
   margin-bottom: 8px;
   background: var(--paper);
   min-height: var(--touch-min);
@@ -43,21 +48,38 @@
     background 0.15s ease;
 }
 
+.venueThumb {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 11px;
+}
+
+.venueBody {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .venueOn {
   border: 1.5px solid var(--ink);
   background: var(--paper-2);
 }
 
 .venueName {
-  font-size: 14.5px;
+  display: block;
+  font-size: 13.5px;
   font-weight: 500;
 }
 
 .venueAddress {
   display: block;
-  font-size: 12px;
+  font-size: 11.5px;
+  line-height: 1.3;
   color: var(--ink-3);
-  margin-top: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .slot {
@@ -91,7 +113,74 @@
 }
 
 .search {
-  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0 8px;
+}
+
+.search > :first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.clear {
+  flex: 0 0 auto;
+  padding: 11px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.clear:disabled {
+  opacity: var(--disabled-opacity);
+}
+
+.searchHint {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--ink-3);
+  margin: 0 0 8px;
+}
+
+/* The mock's pay note. There is nothing to pay, so it carries what is actually
+   true about the booking instead. */
+.note {
+  margin: 20px 0 0;
+  padding: 13px 14px;
+  border-radius: 13px;
+  background: var(--paper-2);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.cta {
+  margin-top: 14px;
+}
+
+.footnote {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.topNote {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
 }
 
 .status {

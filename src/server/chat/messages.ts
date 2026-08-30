@@ -7,7 +7,7 @@ import { suggest, type Suggestion } from '@/lib/chat/suggest';
 import { findCafeMention } from '@/lib/chat/cafe';
 import { LIMITS } from '@/lib/refdata/constants';
 import { badRequest, forbidden, notFound } from '@/server/http/respond';
-import type { Match, Message, Venue } from '@/lib/schemas/entities';
+import type { Booking, Match, Message, Venue } from '@/lib/schemas/entities';
 
 /**
  * Chat (BACKLOG E9.1, E9.3).
@@ -75,9 +75,16 @@ export async function postSystemMessage(matchId: string, text: string): Promise<
 export type Thread = {
   matchId: string;
   counterpart: Card;
+  /** When the mutual yes happened — the thread opens with the date of it. */
+  matchedAt: number;
   messages: (Message & { id: string })[];
   suggestions: Suggestion[];
   booked: boolean;
+  /**
+   * The booking itself, so the thread can show when and where rather than only that
+   * something was booked (the confirmed card in the chat mock).
+   */
+  booking: (Booking & { id: string }) | null;
   cafeMentioned: string | null;
   /** Sent so the client can recompute suggestions locally as messages arrive. */
   venues: Venue[];
@@ -105,9 +112,17 @@ export async function loadThread(uid: string, matchId: string): Promise<Thread> 
   const venues = venueDocs.docs.map((doc) => doc.data() as Venue);
   const booked = match.bookingId !== null;
 
+  // A match can point at a booking that was since cancelled, so the row is read
+  // rather than assumed from the pointer alone.
+  const bookingDoc = match.bookingId
+    ? await db.collection('bookings').doc(match.bookingId).get()
+    : null;
+  const bookingData = bookingDoc?.data() as Booking | undefined;
+
   return {
     matchId,
     counterpart: toCard(otherUid, profile),
+    matchedAt: match.createdAt,
     messages,
     suggestions: suggest({
       messages,
@@ -117,6 +132,8 @@ export async function loadThread(uid: string, matchId: string): Promise<Thread> 
       knownVenues: venues,
     }),
     booked,
+    booking:
+      bookingData && bookingDoc ? { id: bookingDoc.id, ...bookingData } : null,
     cafeMentioned: booked ? null : (findCafeMention(messages, venues)?.name ?? null),
     venues,
   };

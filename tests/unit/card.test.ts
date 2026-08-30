@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   badgeFor,
-  collegeFor,
+  collegesFor,
   composeRoleLine,
   deckLineFor,
   helpTagFor,
@@ -139,7 +139,7 @@ describe('toCard', () => {
       [
         'badge',
         'city',
-        'college',
+        'colleges',
         'deckLine',
         'direction',
         'doors',
@@ -200,20 +200,28 @@ describe('deckLineFor', () => {
 
 /* The two tags on the corners of the deck photo. */
 
-describe('collegeFor', () => {
-  it('prefers the step-1 school list', () => {
-    const school = { name: 'Harvard Business School', course: 'MBA', year: '2027' };
-    expect(collegeFor(profile({ schools: [school], school2: 'NYU' }))).toBe(
+describe('collegesFor', () => {
+  it('lists every school from the step-1 list, not just the first', () => {
+    const harvard = { name: 'Harvard Business School', course: 'MBA', year: '2027' };
+    const duke = { name: 'Duke', course: 'Undergraduate', year: '2019' };
+    expect(collegesFor(profile({ schools: [duke, harvard], school2: 'NYU' }))).toEqual([
+      'Duke',
       'Harvard Business School',
-    );
+    ]);
   });
 
-  it('falls back to the inline student field', () => {
-    expect(collegeFor(profile({ schools: [], school2: 'NYU' }))).toBe('NYU');
+  it('falls back to the inline student field when the list is empty', () => {
+    expect(collegesFor(profile({ schools: [], school2: 'NYU' }))).toEqual(['NYU']);
   });
 
-  it('is null when there is no school at all', () => {
-    expect(collegeFor(profile({ schools: [], school2: '   ' }))).toBeNull();
+  it('is empty when there is no school at all', () => {
+    expect(collegesFor(profile({ schools: [], school2: '   ' }))).toEqual([]);
+  });
+
+  it('drops a duplicate name', () => {
+    const a = { name: 'UCLA', course: 'Undergraduate', year: '2019' };
+    const b = { name: 'ucla', course: 'MBA', year: '2024' };
+    expect(collegesFor(profile({ schools: [a, b], school2: '' }))).toEqual(['UCLA']);
   });
 });
 

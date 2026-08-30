@@ -706,3 +706,20 @@ new label moved.
 Coffee · table for 2"**, matching the mock's density without its price. "Table for 2"
 is not a reservation claim, just a true fact — a booking is always exactly the two
 matched participants.
+
+## 2026-08-30 — Every school on the card, and why the help tag sat on the wrong side
+
+**`Card.college: string | null` is now `Card.colleges: string[]`, and the deck card
+stacks every one of them.** The owner flagged a card whose top-left tag read "Happy to
+chat" — the *help* tag, not a college — sitting where the college belongs. Root cause:
+`collegeFor()` only ever read `schools[0]`, and `.photoTags`'s single visible child
+(the help tag, since this person had no school on file) sat at `justify-content:
+space-between`'s start rather than its end — that behavior only holds with two flex
+children present. The left side of `.photoTags` is now always rendered, even empty,
+so the help tag stays pinned right regardless of how many schools there are. Filtering
+already read every school (`passesFilters()` in `src/lib/deck/rank.ts`) — only the
+card's own display was stuck on the first one.
+
+**A long school name now ellipsizes on one line instead of wrapping inside the pill.**
+Not the reported bug, but the same corner, and `.collegeTag` had no overflow handling
+at all before this.

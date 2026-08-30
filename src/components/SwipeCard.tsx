@@ -125,11 +125,21 @@ export default function SwipeCard({
             onError={() => setBroken((set) => new Set(set).add(current.url))}
           />
         ) : null}
-        {/* College left, what they will do right — the two things worth knowing
-            before the photo is even read. */}
-        {card.college || card.helpTag ? (
+        {/* College(s) left, what they will do right — the two things worth knowing
+            before the photo is even read. The left side is always rendered, even
+            with no schools, so `justify-content: space-between` always has two
+            items to work with — with only the help tag, a single flex child sits
+            at the start of the row instead of the end, landing it on the wrong
+            side entirely. */}
+        {card.colleges.length > 0 || card.helpTag ? (
           <div className={styles.photoTags}>
-            {card.college ? <span className={styles.collegeTag}>{card.college}</span> : null}
+            <div className={styles.collegeStack}>
+              {card.colleges.map((college) => (
+                <span key={college} className={styles.collegeTag}>
+                  {college}
+                </span>
+              ))}
+            </div>
             {card.helpTag ? <span className={styles.helpTag}>{card.helpTag}</span> : null}
           </div>
         ) : null}

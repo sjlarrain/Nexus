@@ -89,9 +89,25 @@
   line-height: 1.15;
 }
 
-/* Near-opaque paper: it sits over an unknown photograph. */
-.collegeTag {
+/* The left side of .photoTags — always rendered (see SwipeCard.tsx) so the help
+   tag on the right stays put whether there are zero, one, or several schools. */
+.collegeStack {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   min-width: 0;
+}
+
+/* Near-opaque paper: it sits over an unknown photograph. A long school name
+   ellipsizes on one line rather than wrapping inside the pill or running under
+   the help tag. */
+.collegeTag {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   background: rgb(255 255 255 / 95%);
   color: var(--ink);
   box-shadow: var(--shadow-card);

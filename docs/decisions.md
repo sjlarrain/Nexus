@@ -592,3 +592,23 @@ app.
 
 **Confetti.** Seventy pieces over three sizes, everything landing inside three
 seconds. The first pass was too thin to read as a celebration.
+
+## 2026-08-29 — College dropdown, and the direction badge drops entirely
+
+**The direction badge is gone from the deck card, not just deduplicated.** The owner's
+follow-up mock (`PlanUp - Activity.html`) never shows a third line under the photo —
+only the college and help-tag pills at the top. The previous rule (drop the badge when
+it repeats the help tag) still left "Open both ways" showing whenever direction was
+`both` and the help tag said something else, which is exactly the case the owner
+flagged. `card.badge` stays on the `Card` type — the onboarding step-5 preview still
+shows it — only `SwipeCard` stopped rendering it.
+
+**The College filter is now a collapsible "Any school" dropdown**, matching the mock's
+interaction (`collegeOpen` / `addingCollege` states) rather than always-visible chips.
+Since there is still no college directory, the checkbox rows are exactly the colleges
+already added — unchecking one removes it — and "+ Add new" is the only way onto the
+list, same deviation as before, new presentation.
+
+**"Any college" joins the summary row above the deck**, alongside "Any industry", "Any
+role" and "Nationwide" — it was the one group `filterSummary()` only showed once
+non-empty, which is why the owner's screenshot of the row never had it.

@@ -106,11 +106,90 @@
   color: var(--ink-inv);
 }
 
+/* The College group: a collapsed "Any school" trigger, expanding to a checkbox
+   list of the colleges already added — from the filters mock's dropdown. */
+.collegeTrigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px 13px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-box);
+  background: var(--paper);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.chevron,
+.chevronOpen {
+  font-size: 11px;
+  color: var(--ink-3);
+  transition: transform 0.15s ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.collegeList {
+  margin-top: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-box);
+  overflow: hidden;
+}
+
+.collegeRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+  padding: 11px 13px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: left;
+}
+
+.collegeRow:first-child {
+  border-top: none;
+}
+
+.checkOn {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--ink);
+  color: var(--ink-inv);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.addNew {
+  display: block;
+  width: 100%;
+  padding: 11px 13px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-align: left;
+}
+
 .addRow {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 8px;
+  padding: 9px 13px;
+  border-top: 1px solid var(--line);
 }
 
 .addRow > :first-child {

@@ -104,10 +104,6 @@
   white-space: nowrap;
 }
 
-.body .badge {
-  margin-bottom: 8px;
-}
-
 /* A scrim, so the photo counter and dots stay legible over a real photograph.
    The mock only ever shows them over a flat hatch. */
 .photoScrim {

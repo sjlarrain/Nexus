@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Badge, Chip, Dots, Meta, Quote, RefBox, hatchClass } from '@/components/ui';
+import { Chip, Dots, Meta, Quote, RefBox, hatchClass } from '@/components/ui';
 import type { Card } from '@/lib/cards/card';
 import type { SwipeAction } from '@/lib/schemas/entities';
 import styles from './SwipeCard.module.css';
@@ -147,13 +147,6 @@ export default function SwipeCard({
       </div>
 
       <div className={styles.body}>
-        {/* The direction badge moves off the photo, which now belongs to the college
-            and help tags, and reads as the kicker it always was. Dropped when the help
-            tag already says it: "Can refer" twice on one card reads as a bug. */}
-        {card.badge && card.badge !== card.helpTag ? (
-          <Badge className={styles.badge}>{card.badge}</Badge>
-        ) : null}
-
         <div className={styles.nameRow}>
           <h2 className={styles.name}>{card.name}</h2>
           {card.city ? <Meta>{card.city}</Meta> : null}

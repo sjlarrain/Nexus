@@ -10,10 +10,12 @@ import styles from './filters.module.css';
  * "Narrow the deck" (docs/mocks/planup-filters.unpacked.html): a bottom sheet of
  * chip groups over the deck, College first.
  *
- * The mock's college list is a fixed set with "+ Add new". There is no college
- * directory in this app, so the whole section is the "add new" half — you type a
- * school and it becomes a chip. `passesFilters` matches loosely on purpose, so
- * "Michigan" finds "University of Michigan".
+ * The mock's College group is a fixed catalogue behind a collapsible "Any school"
+ * dropdown with checkbox rows and "+ Add new". There is no college directory in
+ * this app, so the checkbox rows are exactly the colleges you have already added —
+ * unchecking one removes it — and "+ Add new" is the only way onto the list. The
+ * deck's own matching (src/lib/deck/rank.ts) is loose on purpose, so "Michigan"
+ * finds "University of Michigan".
  *
  * Every group here maps to a filter the deck API already applies (src/lib/deck/rank.ts).
  * Nothing is offered that would not actually narrow the deck.
@@ -44,11 +46,11 @@ const DIRECTIONS: { value: Direction; label: string }[] = [
 /** The chips above the deck: what is on right now, in the mock's summary style. */
 export function filterSummary(filters: DeckFilterState): string[] {
   const summary = [
+    filters.colleges.length > 0 ? filters.colleges.join(', ') : 'Any college',
     filters.industries.length > 0 ? filters.industries.join(', ') : 'Any industry',
     filters.lanes.length > 0 ? filters.lanes.join(', ') : 'Any role',
     filters.city ?? 'Nationwide',
   ];
-  if (filters.colleges.length > 0) summary.push(filters.colleges.join(', '));
   if (filters.direction) {
     summary.push(DIRECTIONS.find((d) => d.value === filters.direction)?.label ?? '');
   }
@@ -83,6 +85,8 @@ export default function FiltersSheet({
   /** The only city offered: filtering to a city you cannot name is not a feature. */
   myCity: string;
 }) {
+  const [collegeOpen, setCollegeOpen] = useState(false);
+  const [addingCollege, setAddingCollege] = useState(false);
   const [newCollege, setNewCollege] = useState('');
 
   // Roles are scoped to the chosen industries, exactly as they are in onboarding —
@@ -94,6 +98,7 @@ export default function FiltersSheet({
     if (name.length === 0 || filters.colleges.includes(name)) return;
     onChange({ ...filters, colleges: [...filters.colleges, name] });
     setNewCollege('');
+    setAddingCollege(false);
   }
 
   return (
@@ -113,40 +118,63 @@ export default function FiltersSheet({
 
         <section className={styles.group}>
           <p className={styles.groupLabel}>College</p>
-          <div className={styles.chips}>
-            {filters.colleges.map((college) => (
-              <button
-                key={college}
-                type="button"
-                className={`${styles.chip} ${styles.chipOn}`}
-                onClick={() => onChange({ ...filters, colleges: toggle(filters.colleges, college) })}
-              >
-                {college} ×
-              </button>
-            ))}
-          </div>
-          <div className={styles.addRow}>
-            <Input
-              value={newCollege}
-              placeholder="School name"
-              aria-label="School name"
-              onChange={(event) => setNewCollege(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  addCollege();
-                }
-              }}
-            />
-            <button
-              type="button"
-              className={styles.add}
-              disabled={newCollege.trim().length === 0}
-              onClick={addCollege}
-            >
-              Add
-            </button>
-          </div>
+          <button
+            type="button"
+            className={styles.collegeTrigger}
+            aria-expanded={collegeOpen}
+            onClick={() => setCollegeOpen((open) => !open)}
+          >
+            <span>{filters.colleges.length > 0 ? filters.colleges.join(', ') : 'Any school'}</span>
+            <span className={collegeOpen ? styles.chevronOpen : styles.chevron}>▾</span>
+          </button>
+
+          {collegeOpen ? (
+            <div className={styles.collegeList}>
+              {filters.colleges.map((college) => (
+                <button
+                  key={college}
+                  type="button"
+                  className={styles.collegeRow}
+                  onClick={() => onChange({ ...filters, colleges: toggle(filters.colleges, college) })}
+                >
+                  <span>{college}</span>
+                  <span className={styles.checkOn} aria-hidden="true">
+                    ✓
+                  </span>
+                </button>
+              ))}
+
+              {addingCollege ? (
+                <div className={styles.addRow}>
+                  <Input
+                    value={newCollege}
+                    placeholder="School name"
+                    aria-label="School name"
+                    autoFocus
+                    onChange={(event) => setNewCollege(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        addCollege();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className={styles.add}
+                    disabled={newCollege.trim().length === 0}
+                    onClick={addCollege}
+                  >
+                    Add
+                  </button>
+                </div>
+              ) : (
+                <button type="button" className={styles.addNew} onClick={() => setAddingCollege(true)}>
+                  + Add new
+                </button>
+              )}
+            </div>
+          ) : null}
         </section>
 
         <section className={styles.group}>

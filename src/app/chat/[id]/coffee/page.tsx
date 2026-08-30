@@ -135,7 +135,7 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchId, mode: 'in_person', venueId, slots: [chosenSlot], hold: true }),
+        body: JSON.stringify({ matchId, mode: 'in_person', venueId, slots: [chosenSlot] }),
       });
       if (!response.ok) {
         const payload: unknown = await response.json();

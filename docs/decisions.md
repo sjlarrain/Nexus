@@ -800,3 +800,22 @@ still no payment provider, so the note says the table is held free and the card 
 **The system message carries no absolute time** — "A table for two is held at Blue
 Bottle Coffee." The confirmed card directly beneath it renders the slot in each
 reader's own timezone, which a frozen string in the message body cannot.
+
+## 2026-08-30 — In person holds the table on the server's say-so, not the client's
+
+**`hold` is gone from the request; `createBooking` derives it from the mode.** The
+first cut let the booking screen ask for a held table, which meant a client that did
+not ask still got the old propose-then-accept flow — exactly what a tab loaded before
+the change does, and it landed the owner on "Times sent." after tapping Reserve table,
+with the two suggested times rather than the one they picked.
+
+Holding is the product rule for in person, not a client preference, so it belongs on
+the server: any in-person booking is confirmed on the first time it is given, and a
+video call is always proposed. A stale bundle now produces the right booking anyway.
+
+**A held booking stores only the time it is held for.** Keeping the second suggestion
+in `slots` on a confirmed booking left a choice on record that nobody can make.
+
+**The in-person bookings already stuck in `proposed` were confirmed in place**, on
+their first slot, with the same system line the flow posts, since the screens no
+longer offer any way to advance them.

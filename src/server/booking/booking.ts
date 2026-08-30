@@ -74,18 +74,26 @@ export type NewBooking = {
   mode: BookingMode;
   venueId: string | null;
   slots: number[];
-  /**
-   * In person, the person asking for the intro holds the table (docs/decisions.md):
-   * they pick one café and one time, and the booking is created already confirmed —
-   * there is nothing left for the other side to choose, only to show up. A video
-   * call has no table to hold, so it stays propose-then-accept on two times.
-   */
-  hold: boolean;
 };
+
+/**
+ * Which of the two flows a mode gets. In person, the person asking for the intro
+ * holds the table (docs/decisions.md): one café, one time, confirmed on the spot —
+ * there is nothing left for the other side to choose, only to show up. A video call
+ * has no table to hold, so it stays propose-then-accept on two times.
+ *
+ * This is decided here rather than taken from the request on purpose. It is the
+ * product rule, not a client preference: an in-person booking that arrives asking to
+ * be "proposed" — from a stale tab still running yesterday's bundle, say — would
+ * otherwise strand the pair in a state the screens no longer offer a way out of.
+ */
+function holdsTable(mode: BookingMode): boolean {
+  return mode === 'in_person';
+}
 
 export async function createBooking(
   uid: string,
-  { matchId, mode, venueId, slots, hold }: NewBooking,
+  { matchId, mode, venueId, slots }: NewBooking,
 ): Promise<{ bookingId: string; status: Booking['status'] }> {
   const match = await requireMatch(uid, matchId);
   if (match.bookingId !== null) throw badRequest('This match already has a coffee booked.');
@@ -95,10 +103,12 @@ export async function createBooking(
   }
   if (mode === 'in_person' && !venueId) throw badRequest('Pick a café for an in-person coffee.');
 
+  // The table is held at the first time given. The screen sends exactly the one the
+  // user picked; an older client sends both suggestions, and the first is the one it
+  // had selected by default.
+  const hold = holdsTable(mode);
   const held = slots[0];
-  if (hold && (mode !== 'in_person' || slots.length !== 1 || held === undefined)) {
-    throw badRequest('Hold a table at one café, for one time.');
-  }
+  if (hold && held === undefined) throw badRequest('Pick a time for the table.');
 
   const db = adminDb();
 
@@ -118,7 +128,11 @@ export async function createBooking(
     participants: match.participants,
     mode,
     venue,
-    slots: slots.map((startsAt) => ({ startsAt, durationMin: THIRTY_MINUTES })),
+    // Held: the one time it is booked for, and nothing to choose between.
+    slots: (confirmed && held !== undefined ? [held] : slots).map((startsAt) => ({
+      startsAt,
+      durationMin: THIRTY_MINUTES,
+    })),
     chosenSlot: confirmed ? (held ?? null) : null,
     status: confirmed ? 'confirmed' : 'proposed',
     createdBy: uid,

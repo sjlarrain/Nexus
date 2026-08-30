@@ -11,16 +11,15 @@ const bodySchema = z.object({
   mode: z.enum(BOOKING_MODES),
   /** Required for `in_person`; a video call has no venue. */
   venueId: z.string().min(1).nullable(),
-  /** One or two 30-minute options (spec §1: "two time slots"). */
+  /** One or two 30-minute options (spec §1: "two time slots"). In person only the
+      first is used — the table is held, not proposed (src/server/booking/booking.ts). */
   slots: z.array(z.number().int().positive()).min(1).max(2),
-  /** In person: book the single slot outright rather than propose it. */
-  hold: z.boolean().default(false),
 });
 
 export async function POST(request: Request) {
   return route(async () => {
     const user = await requireUser();
-    const body = await readJson(request, bodySchema);
-    return createBooking(user.uid, body);
+    const { matchId, mode, venueId, slots } = await readJson(request, bodySchema);
+    return createBooking(user.uid, { matchId, mode, venueId, slots });
   });
 }

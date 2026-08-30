@@ -89,7 +89,7 @@ export async function publishProfile(uid: string): Promise<{ publishedAt: number
       updatedAt: publishedAt,
     });
 
-  // A published card with an empty chat list is untestable. Seeding the matches here
+  // A published card with an empty Likes screen is untestable. Seeding the likes here
   // rather than in the route keeps it on every path that publishes.
   await ensureDemoMatches(uid);
 

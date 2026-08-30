@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
     const { created, user: record } = await ensureUserDocument(user);
 
-    // Catches accounts published before auto-matching existed. It is once-per-user
+    // Catches accounts published before auto-liking existed. It is once-per-user
     // and must never be the reason a sign-in fails, hence the swallow.
     if (record.onboarding.completed) {
       try {

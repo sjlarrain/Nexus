@@ -663,3 +663,39 @@ Calendar link — no .ics export, but a genuine calendar event once added, built
 `src/lib/booking/calendar.ts`. "Reschedule" cancels the booking through the existing
 state machine and pushes straight to the propose screen, rather than just linking to
 "see the details" as before.
+
+## 2026-08-30 — The seeded population likes you; it no longer matches you
+
+**`DEMO_MATCH_SHARE` (0.75 mutual matches) becomes `DEMO_LIKE_SHARE` (0.70 inbound
+likes), and no match is seeded at all.** Asked which of three readings of "70% must
+have liked this new user" was meant, the owner chose this one: 70% of the seeded,
+published population has an inbound like waiting, and nothing else.
+
+The old mode handed a fresh account roughly thirty finished threads, five of them
+carrying an opening line it had never done anything to earn. That fills the chat list
+but it is the wrong demo — the deck, the swipe, and the match moment are the product,
+and they had already happened offscreen before the user arrived. Now the Likes screen
+is full on arrival and chat is empty, and the first right-swipe fills it.
+
+**This works only because of two existing behaviours, both verified before the
+change.** `recordSwipe` reads the counter-swipe inside its transaction and creates the
+match when it finds a `yes` or `priority`, so the seeded swipe behind each like makes
+the account's first right-swipe an immediate match through exactly the path a real
+match takes (`src/server/swipes/record-swipe.ts`). And `excludedUids` filters the deck
+on the viewer's *own* swipes, never on inbound ones, so everyone who liked the account
+is still in the deck to be swiped (`src/server/deck/load-deck.ts`). Neither needed
+changing; if either is ever reworked, this mode breaks quietly.
+
+**Likes are only ever manufactured from people the account has never swiped on.** The
+old plan topped its number up from people already swiped on, which was harmless when
+it wrote a match document alongside. It is not harmless now: writing a like from
+someone the account already said yes to produces a mutual yes with no match, a state
+`recordSwipe` never creates and nothing knows how to repair, and writing one from
+someone it passed on resurrects a dismissed card. So an account part-way through its
+deck gets fewer than 70%, and that is the honest number — the alternative is
+manufacturing the matches this change exists to stop making.
+
+**`npm run doctor` now measures likes, counting `likes + matches`.** An account that
+has worked through part of its Likes screen has consumed those likes into matches,
+which is the intended direction of travel, so the sum is the coverage number rather
+than the likes alone.

@@ -10,16 +10,16 @@
  *
  * This walks what is actually in Firestore and answers three questions: does every
  * profile still parse, where would each user land at sign-in, and does each real
- * account have matches to test with.
+ * account have enough inbound likes to test with.
  *
- * Read-only unless `--fix` is passed, which backfills auto-matches for real accounts
- * that published before auto-matching existed, or whose matches a reseed removed.
+ * Read-only unless `--fix` is passed, which backfills seeded likes for real accounts
+ * that published before auto-liking existed, or whose likes a reseed removed.
  */
 import { adminDb } from '@/server/firebase/admin';
 import { profileSchema } from '@/lib/schemas/profile';
 import { landingRouteFor } from '@/lib/onboarding/landing';
 import { canPublish } from '@/lib/onboarding/gates';
-import { DEMO_MATCH_SHARE } from '@/lib/matching/demo-plan';
+import { DEMO_LIKE_SHARE } from '@/lib/matching/demo-plan';
 import { ensureDemoMatches } from '@/server/users/demo-matches';
 import type { UserRecord } from '@/server/users/ensure-user';
 
@@ -52,11 +52,11 @@ async function backfill(): Promise<void> {
     return data.seeded !== true && data.onboarding?.completed === true;
   });
 
-  process.stdout.write(`backfilling auto-matches for ${targets.length} real account(s)...\n`);
+  process.stdout.write(`backfilling seeded likes for ${targets.length} real account(s)...\n`);
   for (const doc of targets) {
     const result = await ensureDemoMatches(doc.id, { force: true });
     const note = result.skipped ? ' (skipped)' : '';
-    process.stdout.write(`  ${doc.id}: ${result.matched} matches, ${result.likes} likes${note}\n`);
+    process.stdout.write(`  ${doc.id}: ${result.likes} likes${note}\n`);
   }
 }
 
@@ -125,22 +125,30 @@ async function main(): Promise<void> {
   }
 
   const eligible = seeded.filter((row) => row.completed).length;
-  const want = Math.ceil(eligible * DEMO_MATCH_SHARE);
-  out.write(`\nauto-match target: ${want} of ${eligible} published seed users per account\n`);
+  const want = Math.ceil(eligible * DEMO_LIKE_SHARE);
+  out.write(`\nseeded-like target: ${want} of ${eligible} published seed users per account\n`);
 
-  const underMatched = real
+  // Matches are no longer seeded — they are earned by swiping — so coverage is counted
+  // on inbound likes. An account that has worked through part of its Likes screen has
+  // consumed those likes into matches, which is the point, so count both.
+  const reached = (row: Row): number => row.likes + row.matches;
+
+  const underLiked = real
     .filter((entry) => entry.completed)
-    .filter((entry) => entry.matches < want);
+    .filter((entry) => reached(entry) < want);
 
   for (const row of real.filter((entry) => entry.completed)) {
-    const ok = row.matches >= want;
-    out.write(`  ${ok ? '✓' : '✗'} ${row.uid}: ${row.matches} matches (want >= ${want})\n`);
+    const ok = reached(row) >= want;
+    out.write(
+      `  ${ok ? '✓' : '✗'} ${row.uid}: ${row.likes} likes + ${row.matches} matches ` +
+        `(want >= ${want})\n`,
+    );
   }
-  if (underMatched.length > 0) {
+  if (underLiked.length > 0) {
     out.write('  run `npm run doctor -- --fix` to backfill\n');
   }
 
-  const failed = broken.length > 0 || underMatched.length > 0;
+  const failed = broken.length > 0 || underLiked.length > 0;
   out.write(`\n${failed ? 'FAIL' : 'OK'}\n`);
   process.exit(failed ? 1 : 0);
 }

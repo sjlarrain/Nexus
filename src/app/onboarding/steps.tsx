@@ -166,9 +166,13 @@ function TaxonomyField({
  * be filled with a deterministic placeholder, so someone signing up during a demo
  * can still get past the three-photo gate. Clearly labelled as a placeholder — see
  * docs/decisions.md.
+ *
+ * `variant` is local tap-count state, not anything persisted: without it the seed
+ * depended only on name and slot, so tapping an already-filled slot to "edit" it
+ * silently returned the exact same image — the edit had no way to do anything.
  */
-function placeholderPhoto(slot: string, seed: string): string {
-  return `https://picsum.photos/seed/${encodeURIComponent(`${seed}-${slot}`)}/600/800`;
+function placeholderPhoto(slot: string, seed: string, variant: number): string {
+  return `https://picsum.photos/seed/${encodeURIComponent(`${seed}-${slot}-${variant}`)}/600/800`;
 }
 
 const BLANK_SCHOOL: School = { name: '', course: 'Undergraduate', year: '' };
@@ -197,14 +201,28 @@ export function Step1({ draft, patch, flushRef }: Step1Props) {
   const cities = stateCode ? (CITIES_BY_STATE[stateCode] ?? []) : [];
   const seed = `${draft.first || 'you'}-${draft.last || 'here'}`.toLowerCase();
 
+  // Bumped on every tap so re-tapping a filled slot cycles to a different
+  // placeholder instead of silently reproducing the one already there.
+  const [photoTaps, setPhotoTaps] = useState(0);
+
   function setPhoto(slot: (typeof PHOTO_SLOTS)[number]): void {
+    const variant = photoTaps + 1;
+    setPhotoTaps(variant);
     const without = draft.photos.filter((photo) => photo.slot !== slot);
     patch({
       photos: [
         ...without,
-        { slot, url: placeholderPhoto(slot, seed), storagePath: `users/pending/photos/${slot}` },
+        {
+          slot,
+          url: placeholderPhoto(slot, seed, variant),
+          storagePath: `users/pending/photos/${slot}`,
+        },
       ],
     });
+  }
+
+  function removePhoto(slot: (typeof PHOTO_SLOTS)[number]): void {
+    patch({ photos: draft.photos.filter((photo) => photo.slot !== slot) });
   }
 
   // "Other" is a chip like any other; picking it swaps the chip row for a text field
@@ -236,21 +254,37 @@ export function Step1({ draft, patch, flushRef }: Step1Props) {
           {PHOTO_SLOTS.map((slot, index) => {
             const photo = draft.photos.find((candidate) => candidate.slot === slot);
             return (
-              <button
+              <div
                 key={slot}
-                type="button"
-                onClick={() => setPhoto(slot)}
                 className={`${styles.photoSlot} ${index % 2 === 0 ? hatchClass : hatchWarmClass}`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                {photo ? <img src={photo.url} alt="" /> : null}
-                <span className={styles.photoSlotLabel}>{PHOTO_SLOT_LABELS[slot]}</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setPhoto(slot)}
+                  className={styles.photoSlotTap}
+                  aria-label={photo ? `Change ${PHOTO_SLOT_LABELS[slot]} photo` : `Add ${PHOTO_SLOT_LABELS[slot]} photo`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {photo ? <img src={photo.url} alt="" /> : null}
+                  <span className={styles.photoSlotLabel}>{PHOTO_SLOT_LABELS[slot]}</span>
+                </button>
+                {photo ? (
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(slot)}
+                    className={styles.photoRemove}
+                    aria-label={`Remove ${PHOTO_SLOT_LABELS[slot]} photo`}
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
             );
           })}
         </div>
         <p className={styles.status}>
-          Tap a slot to use a placeholder. Real uploads arrive with photo storage.
+          Tap a slot to add a placeholder, tap again to try another, or × to remove it.
+          Real uploads arrive with photo storage.
         </p>
       </Field>
 

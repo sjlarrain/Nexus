@@ -663,3 +663,21 @@ Calendar link — no .ics export, but a genuine calendar event once added, built
 `src/lib/booking/calendar.ts`. "Reschedule" cancels the booking through the existing
 state machine and pushes straight to the propose screen, rather than just linking to
 "see the details" as before.
+
+## 2026-08-30 — "Save & exit" actually exits; a photo slot can be changed and removed
+
+**"Save & exit" now navigates to `/deck` on success**, instead of saving silently and
+leaving the user on the same step with only a small status line to show for it — which
+read as broken, since the button's own label promises leaving the page. The deck is
+reachable with an incomplete profile (only publishing is gated), so there is somewhere
+real to send them; `/` would just bounce them back to the same step via
+`landingRouteFor`.
+
+**A photo slot can now be changed and removed, within the placeholder system E5 has
+not replaced yet.** The placeholder URL was seeded only from name and slot, so
+tapping an already-filled slot to "edit" it deterministically produced the exact same
+image — there was no way to change one once set, and no way to clear one at all. A
+local tap counter now feeds the seed, so re-tapping cycles to a different placeholder,
+and each slot gets a small × to remove it outright. This is not photo upload — that is
+still E5, still blocked on the Blaze plan the owner has not opted into (2026-08-28) —
+it is the "add/edit" a placeholder-based slot can honestly offer.

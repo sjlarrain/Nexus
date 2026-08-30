@@ -232,7 +232,10 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
         onClick={async () => {
           const extra = step === 1 ? (step1FlushRef.current?.() ?? undefined) : undefined;
           if (extra) patch(extra);
-          if (await save(step, extra)) setMessage('Saved. You can pick this up later.');
+          // "Exit" has to actually leave the page, or the button does half of what it
+          // says. The deck is reachable with an incomplete profile — only publishing
+          // is gated — so there is somewhere real to send them.
+          if (await save(step, extra)) toDeck();
         }}
       >
         Save &amp; exit

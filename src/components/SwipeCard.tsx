@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Badge, Chip, Dots, Meta, Quote, RefBox, hatchClass } from '@/components/ui';
+import { Chip, Dots, Meta, Quote, RefBox, hatchClass } from '@/components/ui';
 import type { Card } from '@/lib/cards/card';
 import type { SwipeAction } from '@/lib/schemas/entities';
 import styles from './SwipeCard.module.css';
@@ -125,7 +125,14 @@ export default function SwipeCard({
             onError={() => setBroken((set) => new Set(set).add(current.url))}
           />
         ) : null}
-        {card.badge ? <Badge className={styles.badge}>{card.badge}</Badge> : null}
+        {/* College left, what they will do right — the two things worth knowing
+            before the photo is even read. */}
+        {card.college || card.helpTag ? (
+          <div className={styles.photoTags}>
+            {card.college ? <span className={styles.collegeTag}>{card.college}</span> : null}
+            {card.helpTag ? <span className={styles.helpTag}>{card.helpTag}</span> : null}
+          </div>
+        ) : null}
         {photos.length > 1 ? (
           <>
             <span className={styles.photoScrim} />

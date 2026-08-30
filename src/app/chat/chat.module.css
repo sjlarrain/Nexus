@@ -1,24 +1,43 @@
-/* Conversation list and thread. Bubbles are not in the mock, so they are built from
-   its own atoms: ink fill for you, paper with a hairline for them. */
+/* Conversation list and thread, from docs/mocks/planup-chat-prototype.html.
+   The prototype is drawn in the palette docs/planup.md section 5 asks for; this app
+   is built on the tokens extracted from planup-designs.html (see the divergence note
+   in src/app/tokens.css), so the structure below is the mock's and the colours are
+   ours. No raw hex — tokens only. */
 
 .list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 4px 18px 18px;
+  gap: 2px;
+  padding: 4px 18px 20px;
 }
 
+.listHeading {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin: 0 0 12px;
+}
+
+/* Flat rows, not cards: the mock separates them with a hover fill and nothing else. */
 .row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px;
+  padding: 12px 8px;
+  border-radius: 14px;
+  transition: background 0.15s ease;
+}
+
+.row:hover {
+  background: var(--board);
 }
 
 .thumb {
   flex: 0 0 auto;
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
   position: relative;
@@ -37,27 +56,54 @@
   min-width: 0;
 }
 
+.rowTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
 .rowName {
-  font-family: var(--display);
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
+  font-size: 14px;
+  font-weight: 500;
   margin: 0;
+}
+
+.rowWhen {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
 }
 
 .rowRole {
   font-size: 12px;
   color: var(--ink-3);
-  margin: 1px 0 4px;
+  margin: 1px 0 0;
 }
 
+/* Block, not flex: `text-overflow: ellipsis` does not apply to a flex container, and
+   the mock's rows end in an ellipsis rather than a hard cut. */
 .preview {
-  font-size: 13px;
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
   color: var(--ink-2);
-  margin: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The list has no room for the old "Coffee" chip, so a booked thread is marked with
+   the same amber dot the app bar uses for activity. */
+.coffeeDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: var(--r-pill);
+  background: var(--amber);
 }
 
 .empty {
@@ -69,24 +115,26 @@
 
 /* --- thread ---------------------------------------------------------- */
 
-/* Fills the shell exactly; only .messages scrolls, so the coffee bar, suggestions
-   and composer never leave the screen. */
+/* Fills the shell exactly; only .messages scrolls, so the starters and composer
+   never leave the screen. */
 .thread {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
+  background: var(--paper);
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 0 18px 12px;
+  gap: 11px;
+  padding: 0 16px 12px;
   border-bottom: 1px solid var(--line);
 }
 
 .headerBody {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -100,52 +148,68 @@
   color: var(--ink-2);
 }
 
-.coffeeBar {
+.header .thumb {
+  width: 36px;
+  height: 36px;
+}
+
+.header .rowName {
+  font-size: 14px;
+}
+
+.header .rowRole {
+  font-size: 10.5px;
+  margin-top: 2px;
+}
+
+/* The mock's one affordance for the whole booking flow. */
+.coffeePill {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 12px 18px 0;
-  padding: 11px 13px;
-  border-radius: var(--r-box);
-  background: var(--green-bg);
-  color: var(--green-ink);
-  font-size: 12.5px;
-}
-
-.coffeeBarIdle {
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
   background: var(--paper-2);
-  border: 1px solid var(--line);
-  color: var(--ink-2);
+  font-size: 11.5px;
+  font-weight: 500;
+  transition: background 0.15s ease;
 }
 
-.coffeeLink {
-  flex: 0 0 auto;
-  font-weight: 500;
-  text-decoration: underline;
+.coffeePill:hover {
+  background: var(--board);
+}
+
+.coffeeMark {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--amber);
 }
 
 .messages {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 18px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .bubble {
-  max-width: 78%;
-  padding: 10px 13px;
-  border-radius: 14px;
+  max-width: 76%;
+  padding: 11px 13px;
+  border-radius: 16px;
   font-size: 13.5px;
-  line-height: 1.45;
+  line-height: 1.42;
+  text-wrap: pretty;
 }
 
 .fromThem {
   align-self: flex-start;
-  background: var(--paper);
+  background: var(--paper-2);
   border: 1px solid var(--line);
 }
 
@@ -155,44 +219,147 @@
   color: var(--ink-inv);
 }
 
+/* Both the "you matched" note and any system message the booking flow posts. */
+.matched,
 .system {
   align-self: center;
-  max-width: 88%;
-  text-align: center;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  line-height: 1.5;
-  color: var(--ink-3);
-  padding: 4px 0;
-}
-
-/* --- suggested replies (mock 1e openers) ----------------------------- */
-
-.suggestions {
-  padding: 10px 18px 0;
-  border-top: 1px solid var(--line);
-}
-
-.opener {
-  display: block;
-  width: 100%;
-  text-align: left;
+  max-width: 270px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 9px;
   background: var(--paper-2);
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 13px 15px;
-  font-size: 13.5px;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+/* --- the booked coffee, in the thread --------------------------------- */
+
+.confirmed {
+  align-self: stretch;
+  margin-top: 4px;
+  padding: 14px;
+  border: 1px solid var(--green-ink);
+  border-radius: 16px;
+  background: var(--green-bg);
+}
+
+.confirmedKicker {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--green-ink);
+}
+
+.confirmedWhen {
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 7px 0 0;
+}
+
+.confirmedWhere {
+  margin: 5px 0 0;
+  font-size: 12.5px;
   line-height: 1.45;
-  margin-bottom: 8px;
-  min-height: var(--touch-min);
-  transition: border-color 0.15s ease;
+  color: var(--ink-2);
 }
 
-.opener:hover:not(:disabled) {
+/* "Add to calendar" (a real Google Calendar link) and "Reschedule" (cancels, then
+   drops them on the propose form) — the mock's two actions, both genuine. */
+.confirmedActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.confirmedAction,
+.confirmedActionGhost {
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.confirmedAction {
+  background: var(--ink);
+  color: var(--ink-inv);
+}
+
+.confirmedActionGhost {
+  border: 1px solid var(--green-ink);
+  color: var(--green-ink);
+  background: transparent;
+}
+
+.confirmedActionGhost:disabled {
+  opacity: var(--disabled-opacity);
+}
+
+/* --- starters (mock: the dashed opener chips) ------------------------- */
+
+.starters {
+  padding: 0 16px 10px;
+}
+
+.startersHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.startersLabel {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.startersHide {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.starterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.starter {
+  padding: 8px 11px;
+  border-radius: var(--r-pill);
+  border: 1px dashed var(--line-2);
+  font-size: 11.5px;
+  line-height: 1.2;
+  color: var(--ink-2);
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.starter:hover:not(:disabled) {
   border-color: var(--ink);
+  color: var(--ink);
 }
 
-.openerPinned {
+.starter:disabled {
+  opacity: var(--disabled-opacity);
+}
+
+/* The pinned café suggestion keeps the amber it had before the redesign — it is the
+   one opener the app is actively recommending. */
+.starterPinned {
+  border-style: solid;
   border-color: var(--amber);
   background: var(--amber-soft);
   color: var(--amber-ink);
@@ -200,20 +367,28 @@
 
 .composer {
   display: flex;
-  gap: 8px;
-  padding: 10px 18px 12px;
+  gap: 9px;
   align-items: center;
+  padding: 10px 16px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.composerInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  border-radius: 22px;
 }
 
 .send {
   flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-pill);
   background: var(--ink);
   color: var(--ink-inv);
-  border-radius: var(--r-pill);
-  padding: 0 18px;
-  min-height: var(--touch-min);
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 14px;
 }
 
 .send:disabled {

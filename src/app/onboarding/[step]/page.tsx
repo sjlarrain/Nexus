@@ -1,9 +1,10 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Route } from 'next';
 import { Badge, Chip, GhostButton, PrimaryButton, Quote } from '@/components/ui';
+import PublishedMoment from '@/components/PublishedMoment';
 import { Step1, Step2, Step3, Step4, Step5, STEP_HEADINGS } from '../steps';
 import { allStepsComplete, canPublish, gateForStep } from '@/lib/onboarding/gates';
 import { toCard } from '@/lib/cards/card';
@@ -38,6 +39,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [published, setPublished] = useState(false);
+  const step1FlushRef = useRef<(() => Partial<Profile> | undefined) | null>(null);
 
   const fetchMe = useCallback(async (): Promise<MeResponse> => {
     const response = await fetch('/api/me');
@@ -71,15 +73,19 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     setMessage(null);
   }
 
-  async function save(nextStep: number): Promise<boolean> {
+  async function save(nextStep: number, extra?: Partial<Profile>): Promise<boolean> {
     setBusy(true);
     try {
+      // `extra` (e.g. a school typed but never explicitly "Save school"-ed) is folded
+      // in directly rather than relied on via `patch()` + `edits`, since the state
+      // update from `patch()` would not be visible in this closure's `edits` yet.
+      const patch = { ...edits, ...extra };
       // A published user editing their card is not walking through onboarding, and
       // `patchProfile` rejects a step change once `onboarding.completed` is set. So
       // the resume pointer is only sent while it still means something.
       const payload = me?.onboarding.completed
-        ? { patch: edits }
-        : { patch: edits, step: nextStep };
+        ? { patch }
+        : { patch, step: nextStep };
 
       const response = await fetch('/api/profile', {
         method: 'PATCH',
@@ -99,6 +105,9 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     }
   }
 
+  /** Both ways out of the publish popup — the button and the five-second timeout. */
+  const toDeck = useCallback(() => router.push('/deck'), [router]);
+
   async function publish(): Promise<void> {
     setBusy(true);
     try {
@@ -108,8 +117,6 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
         setMessage((body as { error?: string }).error ?? 'Could not publish.');
         return;
       }
-      // The deck is one tap away rather than automatic: publishing is the end of a
-      // long form and the confirmation is the point of it.
       setPublished(true);
     } finally {
       setBusy(false);
@@ -120,22 +127,6 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
     return (
       <main className={styles.frame}>
         <p className={styles.sub}>{message ?? 'Loading…'}</p>
-      </main>
-    );
-  }
-
-  if (published) {
-    return (
-      <main className={styles.frame}>
-        <div className={styles.done}>
-          <span className={styles.doneMark}>✓</span>
-          <h1 className={styles.heading}>Your card is live.</h1>
-          <p className={styles.sub}>
-            That is everything we needed. Start swiping to find people who can open a door — and who
-            are looking for someone like you.
-          </p>
-          <PrimaryButton label="Start swiping" onClick={() => router.push('/deck')} />
-        </div>
       </main>
     );
   }
@@ -162,7 +153,7 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
       <p className={styles.sub}>{heading?.sub}</p>
 
       <div className={styles.body}>
-        {step === 1 ? <Step1 draft={draft} patch={patch} /> : null}
+        {step === 1 ? <Step1 draft={draft} patch={patch} flushRef={step1FlushRef} /> : null}
         {step === 2 ? <Step2 draft={draft} patch={patch} /> : null}
         {step === 3 ? <Step3 draft={draft} patch={patch} /> : null}
         {step === 4 ? <Step4 draft={draft} patch={patch} /> : null}
@@ -227,7 +218,9 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
             gate={gate}
             disabled={busy}
             onClick={async () => {
-              if (await save(nextStep)) router.push(`/onboarding/${nextStep}` as Route);
+              const extra = step === 1 ? (step1FlushRef.current?.() ?? undefined) : undefined;
+              if (extra) patch(extra);
+              if (await save(nextStep, extra)) router.push(`/onboarding/${nextStep}` as Route);
             }}
           />
         )}
@@ -237,11 +230,15 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
         className={styles.saveExit}
         disabled={busy}
         onClick={async () => {
-          if (await save(step)) setMessage('Saved. You can pick this up later.');
+          const extra = step === 1 ? (step1FlushRef.current?.() ?? undefined) : undefined;
+          if (extra) patch(extra);
+          if (await save(step, extra)) setMessage('Saved. You can pick this up later.');
         }}
       >
         Save &amp; exit
       </GhostButton>
+
+      {published ? <PublishedMoment onDismiss={toDeck} /> : null}
     </main>
   );
 }

@@ -36,7 +36,8 @@ export type ActivityInput = {
   bookings: readonly {
     matchId: string;
     name: string;
-    venueName: string;
+    /** Null for a video call — there is no venue to name. */
+    venueName: string | null;
     status: BookingStatus;
     updatedAt: number;
   }[];
@@ -48,12 +49,13 @@ function preview(text: string, max = 60): string {
   return clean.length <= max ? clean : `${clean.slice(0, max - 1)}…`;
 }
 
-function bookingText(name: string, venueName: string, status: BookingStatus): string {
+function bookingText(name: string, venueName: string | null, status: BookingStatus): string {
+  const where = venueName ? ` at ${venueName}` : ' over video call';
   switch (status) {
     case 'proposed':
-      return `${name} proposed a coffee at ${venueName}`;
+      return `${name} proposed a coffee${where}`;
     case 'confirmed':
-      return `Coffee with ${name} is confirmed at ${venueName}`;
+      return `Coffee with ${name} is confirmed${where}`;
     case 'cancelled':
       return `The coffee with ${name} was cancelled`;
   }

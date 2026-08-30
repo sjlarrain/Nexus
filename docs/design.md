@@ -78,6 +78,31 @@ data, fake it visibly, or drop the element.
 | Tabs: Explore / Likes / Chats / Profile | **Have it** | `/deck` `/likes` `/chat` `/profile` |
 | Drag right / left / up | **Have it** | `yes` / `no` / `priority` |
 
+## 5. The chat prototype (docs/mocks/planup-chat-prototype.html)
+
+A second mock, delivered as a self-unpacking bundle; `…unpacked.html` beside it is the
+readable template extracted from it, because the bundle stores the page as JSON inside
+a script tag and cannot be read or diffed as-is.
+
+It is drawn in the palette section 2 of this file records as the *spec's*, not the
+first mock's — Plus Jakarta Sans, `#17150f` ink, `#a2542a` terracotta, `#2f7d5e`
+success. The app stays on the tokens extracted from `planup-designs.html`; the chat
+screens take this mock's structure and the app's colours (owner's call, logged in
+`docs/decisions.md`).
+
+| Element | Status | Why |
+| --- | --- | --- |
+| Café price, "for two" | **No data** | Same gap as mock 1d: `venueSchema` has no price band |
+| "Video call / In person" toggle | **Model change** | `bookingSchema` has no mode; a toggle that changed nothing would misdescribe what was booked |
+| "table held via OpenTable" | **Not built** | No OpenTable integration |
+| Pay CTA, refunds, cancellation window | **Not built** | No payment provider; booking is propose-then-accept and free |
+| "Add to calendar" on the confirmed card | **Not built** | No calendar export; the card links to the booking screen instead |
+| Café thumbnails | **Format only** | Venues carry no photo, so the hatch placeholder stands in |
+| Short chip labels for openers | **Format only** | `suggest()` returns the sentence it will send; a shorter label would hide what gets sent |
+| Conversations list, thread, composer | **Have it** | Built |
+| Confirmed-coffee card in the thread | **Have it** | `loadThread` now returns the booking |
+| Slot list, café list, café search | **Have it** | Booking screen |
+
 ## 4. Naming
 
 The mock is branded **PlanUp**; the app, spec title and `metadata.title` say **Warm

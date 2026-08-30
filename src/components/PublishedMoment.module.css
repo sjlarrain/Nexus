@@ -1,0 +1,165 @@
+/* "Your card is live" — the publish confirmation, as a self-dismissing popup.
+   Same backdrop geometry as MatchMoment.module.css, but on paper rather than the
+   dark sheet: this is the end of onboarding, not a match. */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(20, 18, 15, 0.45);
+  animation: fade 0.2s ease both;
+}
+
+.sheet {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 340px;
+  background: var(--paper);
+  border-radius: 22px;
+  padding: 26px 22px 22px;
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  animation: rise 0.28s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.sheet h2 {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  margin: 14px 0 0;
+}
+
+.sheet p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  margin: 12px 0 18px;
+}
+
+.mark {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: var(--green-bg);
+  color: var(--green-ink);
+  font-size: 24px;
+}
+
+/* --- the five seconds ------------------------------------------------ */
+
+/* Shows the popup is going somewhere on its own. Decorative: the button says the
+   same thing and works whether or not this is running. Duration matches
+   DISMISS_MS in PublishedMoment.tsx. */
+.timer {
+  display: block;
+  height: 2px;
+  margin: 14px 6px 0;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  overflow: hidden;
+}
+
+.timerFill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--ink-3);
+  transform-origin: left center;
+  animation: drain 5s linear both;
+}
+
+/* --- confetti -------------------------------------------------------- */
+
+/* Above the sheet, per the ask, and never in the way of a tap. Held to the 420px
+   app frame so on a desktop the burst falls over the app rather than raining down
+   the empty board either side of it. */
+.confetti {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 420px;
+  transform: translateX(-50%);
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.piece {
+  position: absolute;
+  top: 0;
+  width: 13px;
+  height: 20px;
+  border-radius: 2px;
+  animation: fall var(--duration) cubic-bezier(0.25, 0.5, 0.5, 1) var(--delay) both;
+}
+
+.pieceRound {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+
+/* Two axes on two elements would be cleaner, but a single transform keeps this to
+   one composited property per piece — at seventy pieces that matters. */
+@keyframes fall {
+  0% {
+    transform: translate3d(0, -14vh, 0) rotate(0deg) scale(var(--scale));
+    opacity: 0;
+  }
+
+  8% {
+    opacity: 1;
+  }
+
+  88% {
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate3d(var(--drift), 104vh, 0) rotate(var(--spin)) scale(var(--scale));
+    opacity: 0;
+  }
+}
+
+@keyframes drain {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}

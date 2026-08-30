@@ -1,10 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AppShell from '@/components/AppShell';
 import ActivityStrip from './activity-strip';
 import MatchMoment from '@/components/MatchMoment';
 import SwipeCard, { SwipeActions, deckClass, emptyClass } from '@/components/SwipeCard';
+import TipsTour, { type TourTargets } from '@/components/TipsTour';
+import FiltersSheet, {
+  NO_FILTERS,
+  filterSummary,
+  filtersToQuery,
+  type DeckFilterState,
+} from './filters-sheet';
 import { Chip, PillButton } from '@/components/ui';
 import type { Card } from '@/lib/cards/card';
 import type { SwipeAction } from '@/lib/schemas/entities';
@@ -23,19 +30,34 @@ type DeckCard = Card & { score: number };
 export default function DeckPage() {
   const [cards, setCards] = useState<DeckCard[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  /** First load only. Refetching for a filter change must not blank the screen —
+      the filter sheet is open on top of it. */
+  const [ready, setReady] = useState(false);
   const [leaving, setLeaving] = useState<SwipeAction | null>(null);
   const [matched, setMatched] = useState<{ matchId: string; card: Card } | null>(null);
   const [showActivity, setShowActivity] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<DeckFilterState>(NO_FILTERS);
+  const [myCity, setMyCity] = useState('');
+
+  const cardRef = useRef<HTMLDivElement>(null);
+  const filtersButtonRef = useRef<HTMLSpanElement>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
+  // Memoized so TipsTour's measurement effect isn't retriggered by every unrelated
+  // re-render of this page — the ref objects themselves never change.
+  const tourTargets: TourTargets = useMemo(
+    () => ({ card: cardRef, filters: filtersButtonRef, actions: actionsRef }),
+    [],
+  );
 
   const fetchDeck = useCallback(async (): Promise<DeckCard[]> => {
-    const response = await fetch('/api/deck');
+    const response = await fetch(`/api/deck${filtersToQuery(filters)}`);
     const body: unknown = await response.json();
     if (!response.ok) {
       throw new Error((body as { error?: string }).error ?? 'Could not load the deck.');
     }
     return (body as { cards: DeckCard[] }).cards;
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,12 +69,26 @@ export default function DeckPage() {
         if (!cancelled) setError((caught as Error).message);
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setReady(true);
       });
     return () => {
       cancelled = true;
     };
   }, [fetchDeck]);
+
+  // Only so the location filter can offer a city by name rather than "my city".
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/me')
+      .then((response) => (response.ok ? (response.json() as Promise<{ profile: { city: string } }>) : null))
+      .then((body) => {
+        if (!cancelled && body) setMyCity(body.profile.city);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   /** Plays the exit animation, then commits the swipe. */
   function intent(action: SwipeAction): void {
@@ -92,7 +128,7 @@ export default function DeckPage() {
     }
   }
 
-  if (loading) {
+  if (!ready) {
     return (
       <AppShell>
         <p className={emptyClass}>Loading the deck…</p>
@@ -119,20 +155,24 @@ export default function DeckPage() {
           <PillButton dot onClick={() => setShowActivity((open) => !open)}>
             Activity
           </PillButton>
-          <PillButton>Filters</PillButton>
+          <span ref={filtersButtonRef} style={{ display: 'inline-flex' }}>
+            <PillButton onClick={() => setShowFilters(true)}>Filters</PillButton>
+          </span>
         </>
       }
     >
-      {showActivity ? <ActivityStrip /> : null}
+      {showActivity ? <ActivityStrip onClose={() => setShowActivity(false)} /> : null}
 
-      {/* Filters are display-only until the sheet is built (BACKLOG E15.4). */}
+      {/* The chips say what is on; tapping any of them opens the same sheet. */}
       <div className={styles.filters}>
-        <Chip pill>Any industry</Chip>
-        <Chip pill>Any role</Chip>
-        <Chip pill>Nationwide</Chip>
+        {filterSummary(filters).map((label) => (
+          <button key={label} type="button" onClick={() => setShowFilters(true)}>
+            <Chip pill>{label}</Chip>
+          </button>
+        ))}
       </div>
 
-      <div className={deckClass}>
+      <div className={deckClass} ref={cardRef}>
         {next ? (
           <SwipeCard key={next.uid} card={next} onIntent={() => {}} interactive={false} />
         ) : null}
@@ -143,7 +183,22 @@ export default function DeckPage() {
         )}
       </div>
 
-      {top ? <SwipeActions onIntent={intent} disabled={leaving !== null} /> : null}
+      {top ? (
+        <div ref={actionsRef}>
+          <SwipeActions onIntent={intent} disabled={leaving !== null} />
+        </div>
+      ) : null}
+
+      <TipsTour targets={tourTargets} />
+
+      {showFilters ? (
+        <FiltersSheet
+          filters={filters}
+          myCity={myCity}
+          onChange={setFilters}
+          onClose={() => setShowFilters(false)}
+        />
+      ) : null}
 
       {matched ? (
         <MatchMoment

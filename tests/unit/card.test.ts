@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   badgeFor,
+  collegeFor,
   composeRoleLine,
   deckLineFor,
+  helpTagFor,
   roleLineFor,
   tagsFor,
   toCard,
@@ -137,10 +139,12 @@ describe('toCard', () => {
       [
         'badge',
         'city',
+        'college',
         'deckLine',
         'direction',
         'doors',
         'headline',
+        'helpTag',
         'name',
         'openTo',
         'photos',
@@ -191,5 +195,39 @@ describe('deckLineFor', () => {
     expect(deckLineFor(profile({ mode: 'working', role: 'PM', company: 'Figma', years: '' }))).toBe(
       'PM · Figma',
     );
+  });
+});
+
+/* The two tags on the corners of the deck photo. */
+
+describe('collegeFor', () => {
+  it('prefers the step-1 school list', () => {
+    const school = { name: 'Harvard Business School', course: 'MBA', year: '2027' };
+    expect(collegeFor(profile({ schools: [school], school2: 'NYU' }))).toBe(
+      'Harvard Business School',
+    );
+  });
+
+  it('falls back to the inline student field', () => {
+    expect(collegeFor(profile({ schools: [], school2: 'NYU' }))).toBe('NYU');
+  });
+
+  it('is null when there is no school at all', () => {
+    expect(collegeFor(profile({ schools: [], school2: '   ' }))).toBeNull();
+  });
+});
+
+describe('helpTagFor', () => {
+  it('reads a referral as the stronger offer', () => {
+    const will = { Figma: 'Happy to chat', Stripe: 'Happy to refer' } as const;
+    expect(helpTagFor({ will })).toBe('Can refer');
+  });
+
+  it('falls back to a chat', () => {
+    expect(helpTagFor({ will: { Figma: 'Happy to chat' } })).toBe('Happy to chat');
+  });
+
+  it('is null when no door has been offered', () => {
+    expect(helpTagFor({ will: {} })).toBeNull();
   });
 });

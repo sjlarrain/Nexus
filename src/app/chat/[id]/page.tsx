@@ -1,14 +1,17 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import AppShell from '@/components/AppShell';
 import { Input, hatchClass } from '@/components/ui';
 import { firebaseAuth, firebaseDb } from '@/lib/firebase/client';
-import { suggest } from '@/lib/chat/suggest';
-import type { Message, Venue } from '@/lib/schemas/entities';
+import { headlineFor, suggest } from '@/lib/chat/suggest';
+import { shortDate } from '@/lib/chat/when';
+import { googleCalendarUrl } from '@/lib/booking/calendar';
+import type { Booking, Message, Venue } from '@/lib/schemas/entities';
 import type { Card } from '@/lib/cards/card';
 import styles from '../chat.module.css';
 
@@ -26,21 +29,36 @@ import styles from '../chat.module.css';
 type Thread = {
   matchId: string;
   counterpart: Card;
+  matchedAt: number;
   messages: (Message & { id: string })[];
   booked: boolean;
+  booking: (Booking & { id: string }) | null;
   cafeMentioned: string | null;
   venues: Venue[];
 };
 
+function formatSlot(startsAt: number): string {
+  return new Date(startsAt).toLocaleString(undefined, {
+    weekday: 'long',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: matchId } = use(params);
+  const router = useRouter();
 
   const [thread, setThread] = useState<Thread | null>(null);
   const [live, setLive] = useState<(Message & { id: string })[] | null>(null);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
   const [me, setMe] = useState<string | null>(null);
+  // The mock lets the starter row be dismissed; it comes back on the next visit.
+  const [startersHidden, setStartersHidden] = useState(false);
+  const composer = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     const [threadResponse, meResponse] = await Promise.all([
@@ -124,6 +142,9 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
     });
   }, [thread, me, messages]);
 
+  // Every suggestion in a set comes from one rule, so the first one names the set.
+  const headline = suggestions[0] ? headlineFor(suggestions[0].rule) : '';
+
   async function send(text: string) {
     const trimmed = text.trim();
     if (trimmed.length === 0) return;
@@ -146,6 +167,27 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
       setThread((await load()).thread);
     } finally {
       setSending(false);
+    }
+  }
+
+  /** Cancels the confirmed coffee, then drops them straight onto the propose form —
+      "reschedule" means picking a new time, not just seeing the old one is gone. */
+  async function reschedule(bookingId: string): Promise<void> {
+    setRescheduling(true);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' }),
+      });
+      if (!response.ok) {
+        const body: unknown = await response.json();
+        setError((body as { error?: string }).error ?? 'Could not reschedule that.');
+        return;
+      }
+      router.push(`/chat/${matchId}/coffee`);
+    } finally {
+      setRescheduling(false);
     }
   }
 
@@ -184,32 +226,19 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
             <h1 className={styles.rowName}>{thread.counterpart.name}</h1>
             <p className={styles.rowRole}>{thread.counterpart.deckLine}</p>
           </div>
+
+          {/* The mock puts the whole coffee flow behind one pill in the header. */}
+          <Link href={`/chat/${matchId}/coffee`} className={styles.coffeePill}>
+            <span className={styles.coffeeMark} aria-hidden="true" />
+            Coffee chat
+          </Link>
         </header>
 
-        {thread.booked ? (
-          <p className={styles.coffeeBar}>
-            Coffee is booked.
-            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
-              See the details
-            </Link>
-          </p>
-        ) : thread.cafeMentioned ? (
-          <p className={styles.coffeeBar}>
-            {thread.cafeMentioned} came up in this chat.
-            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
-              Book it
-            </Link>
-          </p>
-        ) : (
-          <p className={`${styles.coffeeBar} ${styles.coffeeBarIdle}`}>
-            A 30-minute coffee is the point of all this.
-            <Link href={`/chat/${matchId}/coffee`} className={styles.coffeeLink}>
-              Set one up
-            </Link>
-          </p>
-        )}
-
         <div className={styles.messages}>
+          <p className={styles.matched}>
+            You matched {shortDate(thread.matchedAt)}. Nobody can message before a mutual yes.
+          </p>
+
           {messages.map((message) =>
             message.kind === 'system' ? (
               <p key={message.id} className={styles.system}>
@@ -226,21 +255,80 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
               </div>
             ),
           )}
+
+          {thread.booking && thread.booking.status === 'confirmed'
+            ? (() => {
+                const confirmedBooking = thread.booking;
+                const chosenSlot = confirmedBooking.chosenSlot;
+                return (
+                  <div className={styles.confirmed}>
+                    <span className={styles.confirmedKicker}>Coffee chat confirmed</span>
+                    <p className={styles.confirmedWhen}>
+                      {chosenSlot === null ? 'Time to be picked' : formatSlot(chosenSlot)}
+                    </p>
+                    <p className={styles.confirmedWhere}>
+                      {confirmedBooking.venue ? confirmedBooking.venue.name : 'Video call'}
+                    </p>
+                    {chosenSlot !== null ? (
+                      <div className={styles.confirmedActions}>
+                        <a
+                          href={googleCalendarUrl({
+                            startsAt: chosenSlot,
+                            withName: thread.counterpart.name.split(' ')[0] ?? 'them',
+                            where: confirmedBooking.venue?.name ?? null,
+                          })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.confirmedAction}
+                        >
+                          Add to calendar
+                        </a>
+                        <button
+                          type="button"
+                          disabled={rescheduling}
+                          className={styles.confirmedActionGhost}
+                          onClick={() => void reschedule(confirmedBooking.id)}
+                        >
+                          {rescheduling ? 'Rescheduling…' : 'Reschedule'}
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()
+            : null}
         </div>
 
-        {suggestions.length > 0 ? (
-          <div className={styles.suggestions}>
-            {suggestions.map((suggestion) => (
+        {suggestions.length > 0 && !startersHidden ? (
+          <div className={styles.starters}>
+            <div className={styles.startersHead}>
+              <span className={styles.startersLabel}>{headline}</span>
               <button
-                key={suggestion.text}
                 type="button"
-                disabled={sending}
-                onClick={() => void send(suggestion.text)}
-                className={`${styles.opener} ${suggestion.pinned ? styles.openerPinned : ''}`}
+                className={styles.startersHide}
+                onClick={() => setStartersHidden(true)}
               >
-                {suggestion.text}
+                Hide
               </button>
-            ))}
+            </div>
+            <div className={styles.starterRow}>
+              {suggestions.map((suggestion) => (
+                <button
+                  key={suggestion.text}
+                  type="button"
+                  disabled={sending}
+                  /* Fills the composer rather than sending: the whole point of a
+                     suggestion is that you read it, change a word, and own it. */
+                  onClick={() => {
+                    setDraft(suggestion.text);
+                    composer.current?.focus();
+                  }}
+                  className={`${styles.starter} ${suggestion.pinned ? styles.starterPinned : ''}`}
+                >
+                  {suggestion.short}
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
 
@@ -252,13 +340,20 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
           }}
         >
           <Input
+            ref={composer}
+            className={styles.composerInput}
             value={draft}
-            placeholder="Write a message"
+            placeholder="Write your own message…"
             aria-label="Message"
             onChange={(event) => setDraft(event.target.value)}
           />
-          <button type="submit" className={styles.send} disabled={sending || !draft.trim()}>
-            Send
+          <button
+            type="submit"
+            className={styles.send}
+            aria-label="Send"
+            disabled={sending || !draft.trim()}
+          >
+            →
           </button>
         </form>
       </div>

@@ -503,3 +503,163 @@ are never matched to each other. Idempotent: match ids derive from the uid pair,
 `demoMatchedAt` marker short-circuits the common path. `DEMO_AUTO_MATCH=false` turns
 it off without a code change — **it must be off before the app sees users who are not
 in on the demo.**
+
+## 2026-08-29 — "Your card is live" is a self-dismissing popup, not a screen
+
+**Decision.** Publishing no longer replaces the page with a confirmation screen. The
+confirmation is a popup over the review step (`src/components/PublishedMoment.tsx`),
+it carries an animated confetti burst, and it dismisses itself after five seconds
+onto the deck. "Start swiping" and Escape do the same thing sooner.
+
+**Why.** This reverses the earlier note in the onboarding page that "the deck is one
+tap away rather than automatic". The confirmation still gets its beat of celebration,
+but a screen whose only job is one button is a stop the user has to clear by hand at
+the exact moment the long form finally ended. Auto-dismissing keeps the celebration
+and removes the chore — the tap is still there for anyone who wants it now.
+
+**The five seconds are the timer, not the animation.** The dismissal is a
+`setTimeout` held in a ref so a parent re-render cannot restart it; the progress line
+under the button is decorative and the popup dismisses whether or not it ran.
+
+**Confetti is not rendered under `prefers-reduced-motion`.** `globals.css` kills every
+animation globally under that query, which would leave the pieces parked mid-air, so
+the component reads the query (`useSyncExternalStore`) and renders no pieces at all.
+The pieces are deterministic rather than random — same burst every time, and nothing
+to reason about if this ever renders during hydration. The burst is held to the 420px
+app frame so on a desktop it falls over the app rather than the board either side.
+
+## 2026-08-29 — The chat prototype supplies structure, not colour
+
+**Decision.** `docs/mocks/planup-chat-prototype.html` is built as the conversation
+list, the thread and the booking screen. Its *layout* is followed; its palette and
+type are not. The app stays on the tokens extracted from `planup-designs.html`.
+
+**Why.** The new prototype is drawn in the palette `docs/planup.md` section 5 asks for
+— Plus Jakarta Sans, terracotta `#a2542a`, ink `#17150f` — which is exactly what
+`src/app/tokens.css` records as having *lost* to the first mock. Adopting it would
+restyle every screen in the app, not just chat, so the owner was asked and chose to
+keep the current tokens. If a later mock lands in the same palette, that is the moment
+to revisit the whole token set rather than let chat drift on its own.
+
+**The bundle is committed with an unpacked copy.** The mock ships as a self-extracting
+page that stores its real markup as JSON inside a `<script type="__bundler/template">`
+tag; `planup-chat-prototype.unpacked.html` is that markup, so the design can be read
+and diffed without running the page.
+
+**What the mock asks for and the app does not do** is listed in `docs/design.md`
+section 5. The short version: no venue prices, no video/in-person toggle, no OpenTable,
+no payment. The booking flow stays propose-then-accept and free, and the confirmed card
+links to the booking screen rather than offering a calendar export that does not exist.
+Same rule as the match moment's missing price range — a control that changes nothing is
+a promise the app cannot keep.
+
+**`loadThread` now returns the booking and the match date.** The thread previously knew
+only *that* something was booked; the confirmed card needs when and where, and the
+"You matched Aug 26" note needs the match's `createdAt`.
+
+## 2026-08-29 — Deck tags, real filters, and reply chips that fill the composer
+
+**The deck card's corners.** Top-left is the college, top-right is what the person
+will actually do — `helpTagFor()` reads the per-company answers from step 2 and a
+single "Happy to refer" outranks any number of "Happy to chat", because a referral is
+the stronger offer. The direction badge ("Open both ways") moves off the photo into
+the body, and is dropped entirely when it would repeat the help tag: "Can refer" twice
+on one card reads as a bug.
+
+**Filters are real, and only offer what the deck can apply.** Every group in the sheet
+maps to a filter `passesFilters()` already implements — industry, role, location,
+direction — plus `colleges`, added here. Nothing is offered that would not narrow the
+deck. College matching is deliberately loose (substring, both directions) because
+people type "Michigan" for "University of Michigan", and a filter nobody can satisfy is
+worse than one that is slightly generous. There is no college directory, so the mock's
+fixed list is replaced by its own "+ Add new" half: you type a school and it becomes a
+chip. Roles stay scoped to the chosen industries, as they are in onboarding.
+
+**A suggestion is now a label plus a message, and it fills the composer.** `Suggestion`
+carries `short` (three or four words, what the chip says) and `text` (the whole
+sentence). Tapping a chip puts the sentence in the composer and focuses it rather than
+sending — the point of a suggestion is that you read it, change a word and own it
+before it goes. `headlineFor()` names the rule that produced the set, so the row says
+why these three. The rules themselves were already contextual; only the presentation
+changed. The mock's headline is gendered ("he asked about your work"); ours is not.
+
+**Profile.** The mock's "Edit profile" and "Log out" are 11px text links. The owner
+asked for CTAs, so they are a filled primary and a bordered secondary. Editing
+re-enters onboarding rather than duplicating every field on a second screen. Logging
+out clears both halves — the session cookie the server trusts and the client SDK the
+chat's realtime listener uses — since leaving either behind logs you out of half the
+app.
+
+**Confetti.** Seventy pieces over three sizes, everything landing inside three
+seconds. The first pass was too thin to read as a celebration.
+
+## 2026-08-29 — College dropdown, and the direction badge drops entirely
+
+**The direction badge is gone from the deck card, not just deduplicated.** The owner's
+follow-up mock (`PlanUp - Activity.html`) never shows a third line under the photo —
+only the college and help-tag pills at the top. The previous rule (drop the badge when
+it repeats the help tag) still left "Open both ways" showing whenever direction was
+`both` and the help tag said something else, which is exactly the case the owner
+flagged. `card.badge` stays on the `Card` type — the onboarding step-5 preview still
+shows it — only `SwipeCard` stopped rendering it.
+
+**The College filter is now a collapsible "Any school" dropdown**, matching the mock's
+interaction (`collegeOpen` / `addingCollege` states) rather than always-visible chips.
+Since there is still no college directory, the checkbox rows are exactly the colleges
+already added — unchecking one removes it — and "+ Add new" is the only way onto the
+list, same deviation as before, new presentation.
+
+**"Any college" joins the summary row above the deck**, alongside "Any industry", "Any
+role" and "Nationwide" — it was the one group `filterSummary()` only showed once
+non-empty, which is why the owner's screenshot of the row never had it.
+
+## 2026-08-30 — First-run tour, spotlight sized to a real screen not the mock's frame
+
+**Built `TipsTour` from `PlanUp - Quick Tips.html`'s three-step tour** (the card,
+Filters, then the swipe row) as a spotlight ring over the real element plus a bottom
+sheet, not a callout beside it. The mock's callout sits next to the spot with a
+pointing arrow, sized to fit the gap its fixed 382×812 frame leaves; step 1's spot is
+the whole deck card, which on a real phone can run edge to edge and leaves no such
+gap — a callout that hugs the spot has nowhere to go. A bottom sheet (the same pattern
+Filters and Activity already use) sidesteps the problem entirely: the spotlight still
+points at the right element regardless of its size, and the sheet never fights it for
+space.
+
+**Storage is `localStorage`, not a profile field.** There is no per-account "seen the
+tour" flag, and adding one for a three-step tooltip is more state than the feature is
+worth — a blocked store (private browsing) just counts as seen rather than nagging
+every load. "Replay quick tips" on the profile screen (the mock's unwired link) sends
+`/deck?tips=1`, which forces the tour open regardless of the stored flag.
+
+**The measurement effect defers via `setTimeout`, not `requestAnimationFrame`.**
+`rAF` never fires while a tab is backgrounded — confirmed while building this, in the
+Claude Code browser pane itself — so a rAF-deferred `setRect` can hang indefinitely.
+`setTimeout(fn, 0)` still satisfies the same "don't call setState synchronously inside
+the effect body" rule without depending on the tab being visible. Relatedly, the ref
+lookup table passed to `TipsTour` is now `useMemo`'d in the deck page — an unmemoized
+object literal was retriggering the measurement effect on every unrelated re-render.
+
+## 2026-08-30 — Video call joins in person; the mock's payment claims still do not
+
+**`bookingSchema` gained a real `mode` field** (`'in_person' | 'video'`), and `venue`
+is now nullable rather than always required. This was the one item from the earlier
+"not built" list (2026-08-29 chat entry) that was a genuine gap rather than a promise
+the app cannot keep — a toggle that only picked a mode and stored it is real, unlike
+one that claimed to hold a table. Proposing a video call skips venue selection
+entirely on the booking screen; every place that read `booking.venue.name` (the
+confirmed card, the activity feed, the system messages) now branches on it being null
+instead.
+
+**Prices, "for two", and the OpenTable payment flow are still not built.** The owner
+confirmed (asked directly, given the mock shows "$24 paid by you" in the chat and "You
+pay $24 now to hold the table") that the visuals should be matched without the charge:
+no price anywhere, and the CTAs read "Propose these times" / "Confirm this time" —
+never a claim that money moved. `venueSchema` still carries no pricing.
+
+**The confirmed-coffee card gets its two actions back: "Add to calendar" and
+"Reschedule."** The earlier entry deferred both because building only one of the
+mock's two actions read as arbitrary. "Add to calendar" opens a prefilled Google
+Calendar link — no .ics export, but a genuine calendar event once added, built in
+`src/lib/booking/calendar.ts`. "Reschedule" cancels the booking through the existing
+state machine and pushes straight to the propose screen, rather than just linking to
+"see the details" as before.

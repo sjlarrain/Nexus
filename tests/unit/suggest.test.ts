@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { suggest, type SuggestContext } from '@/lib/chat/suggest';
+import { headlineFor, suggest, type SuggestContext } from '@/lib/chat/suggest';
 import { findCafeMention, orderVenuesForBooking } from '@/lib/chat/cafe';
 import type { Message, Venue } from '@/lib/schemas/entities';
 
@@ -195,5 +195,34 @@ describe('venue ordering for the booking screen', () => {
     const ordered = orderVenuesForBooking(VENUES, null);
     expect(ordered.map((v) => v.venue.id)).toEqual(['v1', 'v2', 'v3']);
     expect(ordered.every((v) => !v.mentionedInChat)).toBe(true);
+  });
+});
+
+/* The chip contract: a short label to tap, a full message to edit and send. */
+describe('chip labels', () => {
+  const sets = [
+    suggest({ messages: [], meUid: ME, booked: false }),
+    suggest({ messages: [], meUid: ME, booked: true }),
+    suggest({ messages: [msg(THEM, 'what have you built lately?')], meUid: ME, booked: false }),
+    suggest({ messages: [msg(ME, 'anything I can do?')], meUid: ME, booked: false }),
+  ];
+
+  it('gives every suggestion a short label and a longer message', () => {
+    for (const set of sets) {
+      for (const suggestion of set) {
+        expect(suggestion.short.length).toBeGreaterThan(0);
+        // The chip is a label, not the message — four words at most.
+        expect(suggestion.short.split(' ').length).toBeLessThanOrEqual(4);
+        expect(suggestion.text.length).toBeGreaterThan(suggestion.short.length);
+      }
+    }
+  });
+
+  it('names every rule it can produce', () => {
+    for (const set of sets) {
+      const first = set[0];
+      expect(first).toBeDefined();
+      if (first) expect(headlineFor(first.rule).length).toBeGreaterThan(0);
+    }
   });
 });

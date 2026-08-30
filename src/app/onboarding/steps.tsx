@@ -23,7 +23,7 @@ import { suggestCompanies } from '@/lib/refdata/peer-map';
 import { hatchClass, hatchWarmClass } from '@/components/ui';
 import type { Profile, School } from '@/lib/schemas/profile';
 import styles from './onboarding.module.css';
-import { useState } from 'react';
+import { useEffect, useState, type MutableRefObject } from 'react';
 
 /**
  * The five onboarding steps (spec section 2), in the shape of mock 1g: one question
@@ -173,7 +173,17 @@ function placeholderPhoto(slot: string, seed: string): string {
 
 const BLANK_SCHOOL: School = { name: '', course: 'Undergraduate', year: '' };
 
-export function Step1({ draft, patch }: StepProps) {
+type Step1Props = StepProps & {
+  /**
+   * Continue can fire while a school is half-typed but never explicitly saved via
+   * "Save school". The page sets this ref before advancing so that entry is folded
+   * into the patch instead of silently dropped (it otherwise never reaches
+   * `draft.schools`, which is what Step 2's autofill reads).
+   */
+  flushRef?: MutableRefObject<(() => Partial<Profile> | undefined) | null>;
+};
+
+export function Step1({ draft, patch, flushRef }: Step1Props) {
   // The add-school form is open from the start rather than hidden behind a button:
   // education is the first thing most people fill in and an empty section read as
   // "nothing to do here".
@@ -201,13 +211,23 @@ export function Step1({ draft, patch }: StepProps) {
   // and whatever is typed becomes the stored course name.
   const onOther = school !== null && !COURSE_TYPES.includes(school.course as never);
 
-  function save(): void {
-    if (school === null || !school.name.trim()) return;
+  function pendingSchoolPatch(): Partial<Profile> | undefined {
+    if (school === null || !school.name.trim()) return undefined;
     const course = onOther ? courseOther.trim() || OTHER_OPTION : school.course;
-    patch({ schools: [...draft.schools, { ...school, course }] });
+    return { schools: [...draft.schools, { ...school, course }] };
+  }
+
+  function save(): void {
+    const pending = pendingSchoolPatch();
+    if (!pending) return;
+    patch(pending);
     setSchool(null);
     setCourseOther('');
   }
+
+  useEffect(() => {
+    if (flushRef) flushRef.current = pendingSchoolPatch;
+  });
 
   return (
     <>

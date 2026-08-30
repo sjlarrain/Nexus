@@ -1,0 +1,138 @@
+/* The first-run tour (docs/mocks/planup-quick-tips.html): a spotlight cut into a
+   dark backdrop via a huge box-shadow spread, plus a callout card. Rects are the
+   real elements' `getBoundingClientRect()`, so `position: fixed` throughout. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+}
+
+.cutout {
+  position: fixed;
+  z-index: 40;
+  border-radius: 22px;
+  box-shadow: 0 0 0 2000px rgba(20, 18, 15, 0.72);
+  pointer-events: none;
+}
+
+.ring {
+  position: fixed;
+  z-index: 41;
+  border-radius: 22px;
+  border: 2px solid var(--amber);
+  animation: tipsPulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes tipsPulse {
+  0%,
+  100% {
+    opacity: 0.9;
+  }
+
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* A bottom sheet, not a callout beside the spot — the first step's spot is the
+   whole card, which can run edge to edge on a real phone and leave no gap to sit
+   in. Same corner treatment as Filters and Activity. */
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 42;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 18px 18px 26px;
+  border-radius: 22px 22px 0 0;
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+  animation: tipsRise 0.28s ease both;
+}
+
+@keyframes tipsRise {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber-ink);
+}
+
+.skip {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.title {
+  margin: 10px 0 0;
+  font-family: var(--display);
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.body {
+  margin: 7px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.dots {
+  display: flex;
+  gap: 5px;
+}
+
+.dot,
+.dotOn {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--line-2);
+}
+
+.dotOn {
+  background: var(--ink);
+}
+
+.next {
+  padding: 11px 18px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--ink-inv);
+  font-size: 12.5px;
+  font-weight: 500;
+}

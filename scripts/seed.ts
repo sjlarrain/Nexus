@@ -287,6 +287,7 @@ async function writeScenarios(population: Fixture[]): Promise<void> {
       const booking: Booking & { seeded: boolean } = {
         matchId: bookedMatch,
         participants: pairKey(DEMO_VIEWER_UID, booked.uid),
+        mode: 'in_person',
         venue,
         slots: [
           { startsAt: now + days(2), durationMin: 30 },

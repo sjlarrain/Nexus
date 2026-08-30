@@ -73,15 +73,19 @@ export const venueSchema = z.object({
 export type Venue = z.infer<typeof venueSchema>;
 
 /**
- * Booking state machine (BACKLOG E10.4). One side proposes a venue and two slots,
- * the other accepts one; either may cancel.
+ * Booking state machine (BACKLOG E10.4). One side proposes a mode, a venue (for an
+ * in-person coffee) and two slots, the other accepts one; either may cancel.
  */
 export const BOOKING_STATUSES = ['proposed', 'confirmed', 'cancelled'] as const;
+
+/** A video call has no venue; an in-person coffee requires one. */
+export const BOOKING_MODES = ['in_person', 'video'] as const;
 
 export const bookingSchema = z.object({
   matchId: z.string().min(1),
   participants: z.tuple([uid, uid]),
-  venue: venueSchema,
+  mode: z.enum(BOOKING_MODES),
+  venue: venueSchema.nullable(),
   /** Proposed options; `chosenSlot` points at the accepted one. */
   slots: z
     .array(z.object({ startsAt: millis, durationMin: z.literal(30) }))
@@ -95,3 +99,4 @@ export const bookingSchema = z.object({
 });
 export type Booking = z.infer<typeof bookingSchema>;
 export type BookingStatus = (typeof BOOKING_STATUSES)[number];
+export type BookingMode = (typeof BOOKING_MODES)[number];

@@ -24,16 +24,42 @@
   margin: 20px 0 9px;
 }
 
-.preview {
-  overflow: hidden;
+/* --- photo set (mock: one large, two stacked beside it) --------------- */
+
+.photos {
+  display: flex;
+  gap: 8px;
 }
 
-.previewPhoto {
+.photoLead,
+.photoSmall {
   position: relative;
-  height: 180px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 9px;
 }
 
-.previewPhoto img {
+.photoLead {
+  flex: 2;
+  height: 150px;
+  border-radius: var(--r-card);
+}
+
+.photoRest {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.photoSmall {
+  flex: 1;
+  border-radius: 14px;
+}
+
+.photoLead img,
+.photoSmall img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -41,40 +67,134 @@
   object-fit: cover;
 }
 
-.previewBadge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+/* Sits over the hatch when a slot is empty, and over the photo when it is not. */
+.photoTag {
+  position: relative;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--ink-3);
 }
 
-.previewBody {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.photoCount {
+  margin: 12px 0 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
 }
+
+/* --- who you are ------------------------------------------------------ */
 
 .name {
   font-family: var(--display);
-  font-size: 25px;
+  font-size: 26px;
   font-weight: 600;
   letter-spacing: -0.025em;
-  margin: 0;
+  line-height: 1.1;
+  margin: 14px 0 0;
 }
 
 .role {
-  font-size: 13.5px;
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
   color: var(--ink-2);
-  margin: -6px 0 0;
 }
 
-.tags {
+/* --- the one number (mock's stat tile) -------------------------------- */
+
+.stat {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.statValue {
+  font-family: var(--display);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.statLabel {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.statNote {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+/* --- the two CTAs ----------------------------------------------------- */
+
+/* The mock has these as 11px text links. The owner asked for CTAs, so they are a
+   filled primary and a bordered secondary, both full-height touch targets. */
+.ctas {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 16px;
 }
 
-/* --- reply rate ------------------------------------------------------ */
+.editCta,
+.logoutCta {
+  flex: 1 1 0;
+  min-height: var(--touch-min);
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.editCta {
+  background: var(--ink);
+  color: var(--ink-inv);
+}
+
+.editCta:hover {
+  background: var(--ink-2);
+}
+
+.logoutCta {
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  background: var(--paper);
+}
+
+.logoutCta:hover:not(:disabled) {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.logoutCta:disabled {
+  opacity: var(--disabled-opacity);
+}
+
+.replayTips {
+  display: block;
+  margin-top: 12px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.replayTips:hover {
+  color: var(--ink-2);
+}
 
 .rate {
   display: flex;

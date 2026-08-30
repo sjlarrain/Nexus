@@ -3,8 +3,9 @@ import { adminDb } from '@/server/firebase/admin';
 import { counterpartOf } from '@/lib/matching/match-id';
 import { findCafeMention, orderVenuesForBooking } from '@/lib/chat/cafe';
 import { postSystemMessage } from '@/server/chat/messages';
+import { profileSchema } from '@/lib/schemas/profile';
 import { badRequest, forbidden, notFound } from '@/server/http/respond';
-import type { Booking, Match, Message, Venue } from '@/lib/schemas/entities';
+import type { Booking, BookingMode, Match, Message, Venue } from '@/lib/schemas/entities';
 
 /**
  * Coffee booking (BACKLOG E10.2, E10.4–E10.7).
@@ -48,10 +49,29 @@ export async function venuesForMatch(
   return orderVenuesForBooking(venues, findCafeMention(messages, venues));
 }
 
+/**
+ * The other person's first name. The booking screen leads with "Book a coffee chat
+ * with <name>" (chat mock), and this is the one thing on that screen the venues
+ * payload did not already carry.
+ */
+export async function counterpartFirstName(uid: string, matchId: string): Promise<string> {
+  const match = await requireMatch(uid, matchId);
+  const person = await adminDb()
+    .collection('users')
+    .doc(counterpartOf(match.participants, uid))
+    .get();
+
+  const data = person.data();
+  if (!data) return 'them';
+  const parsed = profileSchema.safeParse(data);
+  return parsed.success && parsed.data.first.trim().length > 0 ? parsed.data.first : 'them';
+}
+
 export async function proposeBooking(
   uid: string,
   matchId: string,
-  venueId: string,
+  mode: BookingMode,
+  venueId: string | null,
   slots: number[],
 ): Promise<{ bookingId: string }> {
   const match = await requireMatch(uid, matchId);
@@ -60,11 +80,16 @@ export async function proposeBooking(
   if (slots.some((startsAt) => startsAt < Date.now())) {
     throw badRequest('Those times are in the past.');
   }
+  if (mode === 'in_person' && !venueId) throw badRequest('Pick a café for an in-person coffee.');
 
   const db = adminDb();
-  const venueDoc = await db.collection('venues').doc(venueId).get();
-  const venue = venueDoc.data() as Venue | undefined;
-  if (!venue) throw notFound('That venue is not on the list.');
+
+  let venue: Venue | null = null;
+  if (mode === 'in_person' && venueId) {
+    const venueDoc = await db.collection('venues').doc(venueId).get();
+    venue = (venueDoc.data() as Venue | undefined) ?? null;
+    if (!venue) throw notFound('That venue is not on the list.');
+  }
 
   const now = Date.now();
   const bookingRef = db.collection('bookings').doc();
@@ -72,6 +97,7 @@ export async function proposeBooking(
   const booking: Booking = {
     matchId,
     participants: match.participants,
+    mode,
     venue,
     slots: slots.map((startsAt) => ({ startsAt, durationMin: THIRTY_MINUTES })),
     chosenSlot: null,
@@ -83,7 +109,10 @@ export async function proposeBooking(
 
   await bookingRef.set(booking);
   await db.collection('matches').doc(matchId).update({ bookingId: bookingRef.id });
-  await postSystemMessage(matchId, `A 30-minute coffee was proposed at ${venue.name}.`);
+  await postSystemMessage(
+    matchId,
+    `A 30-minute coffee was proposed${venue ? ` at ${venue.name}` : ' — video call'}.`,
+  );
 
   return { bookingId: bookingRef.id };
 }
@@ -110,7 +139,7 @@ export async function acceptBooking(
   await ref.update({ status: 'confirmed', chosenSlot: startsAt, updatedAt: Date.now() });
   await postSystemMessage(
     booking.matchId,
-    `Coffee is confirmed at ${booking.venue.name} for ${new Date(startsAt).toUTCString()}.`,
+    `Coffee is confirmed${booking.venue ? ` at ${booking.venue.name}` : ' over video call'} for ${new Date(startsAt).toUTCString()}.`,
   );
 
   return { status: 'confirmed', chosenSlot: startsAt };

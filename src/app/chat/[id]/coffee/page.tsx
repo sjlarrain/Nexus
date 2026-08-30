@@ -4,24 +4,37 @@ import { use, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import AppShell from '@/components/AppShell';
-import { Chip, Eyebrow, Input, PrimaryButton } from '@/components/ui';
-import type { Booking, Venue } from '@/lib/schemas/entities';
+import { Chip, Input, PrimaryButton, hatchClass } from '@/components/ui';
+import { BOOKING_MODES, type Booking, type BookingMode, type Venue } from '@/lib/schemas/entities';
 import styles from './coffee.module.css';
 
 /**
- * Coffee booking (spec section 1): three nearby venues, manual search below, two time
- * slots. A café named in the chat pins to the top tagged "Mentioned in your chat".
+ * Coffee booking (spec section 1): video call or in person, three nearby venues with
+ * manual search below, two time slots. A café named in the chat pins to the top
+ * tagged "Mentioned in your chat".
  *
  * The screen has two faces. With no booking it proposes; with one it shows the state
  * machine's next move — the other side picking a time, or you picking one. Without
  * that second face a proposal could never be accepted from the UI (BACKLOG E10.4).
+ *
+ * Laid out after docs/mocks/planup-quick-tips.html's booking screen. Two things in
+ * that mock are still not built, for the same reason MatchMoment drops its price
+ * range: they would be promises the app cannot keep (docs/design.md).
+ *
+ *   · prices and "for two"   — `venueSchema` carries no pricing
+ *   · payment and OpenTable  — there is no payment provider and no OpenTable
+ *                              integration; the flow is propose-then-accept, free,
+ *                              and the note under the slots says so plainly
  */
+
+const MODE_LABEL: Record<BookingMode, string> = { video: 'Video call', in_person: 'In person' };
 
 type VenueRow = { venue: Venue; mentionedInChat: boolean };
 type Existing = (Booking & { id: string }) | null;
 
 type VenuesResponse = {
   venues: VenueRow[];
+  theirName: string;
   suggestedSlots: number[];
   booking: Existing;
   waitingOn: 'you' | 'them' | null;
@@ -43,6 +56,7 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
   const preselected = Number(searchParams.get('slot')) || null;
 
   const [data, setData] = useState<VenuesResponse | null>(null);
+  const [mode, setMode] = useState<BookingMode>('in_person');
   const [search, setSearch] = useState('');
   const [venueId, setVenueId] = useState<string | null>(null);
   const [chosenSlot, setChosenSlot] = useState<number | null>(preselected);
@@ -140,21 +154,25 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
         onClick={() => setVenueId(row.venue.id)}
         className={`${styles.venue} ${venueId === row.venue.id ? styles.venueOn : ''}`}
       >
-        <span>
+        <span className={`${styles.venueThumb} ${hatchClass}`} aria-hidden="true" />
+        <span className={styles.venueBody}>
           <span className={styles.venueName}>{row.venue.name}</span>
           {row.venue.address ? (
             <span className={styles.venueAddress}>{row.venue.address}</span>
           ) : null}
         </span>
-        {row.mentionedInChat ? <Chip tone="amber">Mentioned in your chat</Chip> : null}
+        {row.mentionedInChat ? <Chip tone="amber">In your chat</Chip> : null}
       </button>
     );
   }
 
   const back = (
-    <Link href={`/chat/${matchId}`} className={styles.back} aria-label="Back to the chat">
-      ←
-    </Link>
+    <div className={styles.topRow}>
+      <Link href={`/chat/${matchId}`} className={styles.back} aria-label="Back to the chat">
+        ←
+      </Link>
+      <span className={styles.topNote}>One screen, one tap for them</span>
+    </div>
   );
 
   /* ---------------------------------------------------------------- */
@@ -162,6 +180,9 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
   /* ---------------------------------------------------------------- */
   if (booking) {
     const confirmed = booking.status === 'confirmed';
+    // "at Devoción, Williamsburg" for an in-person coffee, "over video call" for one.
+    const at = booking.venue ? `at ${booking.venue.name}` : 'over video call';
+    const label = booking.venue ? booking.venue.name : 'video call';
 
     return (
       <AppShell>
@@ -172,14 +193,15 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
           </h1>
           <p className={styles.sub}>
             {confirmed
-              ? `${booking.venue.name} — 30 minutes.`
+              ? `${label} — 30 minutes.`
               : waitingOn === 'you'
-                ? `They proposed ${booking.venue.name}. Choose one and it is booked.`
-                : `Waiting for them to pick one of your times at ${booking.venue.name}.`}
+                ? `They proposed a coffee ${at}. Choose one and it is booked.`
+                : `Waiting for them to pick one of your times ${at}.`}
           </p>
 
-          <Eyebrow>{confirmed ? 'When' : 'Proposed times'}</Eyebrow>
-          <div className={styles.sectionLabel} />
+          <p className={styles.kicker}>
+            {confirmed ? 'When' : 'Proposed times'} · your local time
+          </p>
 
           {confirmed && booking.chosenSlot !== null ? (
             <div className={`${styles.slot} ${styles.slotOn}`}>
@@ -245,27 +267,59 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
       <div className={styles.frame}>
         {back}
 
-        <h1 className={styles.heading}>Where should it be?</h1>
-        <p className={styles.sub}>Thirty minutes, somewhere near both of you.</p>
+        <h1 className={styles.heading}>Book a coffee chat with {data.theirName}</h1>
+        <p className={styles.sub}>
+          Thirty minutes, {mode === 'video' ? 'over video' : 'somewhere near both of you'}.{' '}
+          {data.theirName} picks one of your times and it is booked.
+        </p>
 
-        <Eyebrow>Nearby</Eyebrow>
-        <div className={styles.sectionLabel} />
-        {nearby.map(venueRow)}
-
-        <Eyebrow>Search</Eyebrow>
-        <div className={styles.sectionLabel} />
-        <div className={styles.search}>
-          <Input
-            value={search}
-            placeholder="Find a place"
-            aria-label="Find a place"
-            onChange={(event) => setSearch(event.target.value)}
-          />
+        <div className={styles.modeRow} role="group" aria-label="Video call or in person">
+          {BOOKING_MODES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={mode === option}
+              className={`${styles.modeBtn} ${mode === option ? styles.modeOn : ''}`}
+              onClick={() => setMode(option)}
+            >
+              {MODE_LABEL[option]}
+            </button>
+          ))}
         </div>
-        {searched.map(venueRow)}
 
-        <Eyebrow>Times</Eyebrow>
-        <div className={styles.sectionLabel} />
+        {mode === 'in_person' ? (
+          <>
+            <p className={styles.kicker}>Cafés near you both</p>
+            {nearby.map(venueRow)}
+
+            <div className={styles.search}>
+              <Input
+                value={search}
+                placeholder="Search a café or neighbourhood…"
+                aria-label="Search a café or neighbourhood"
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              <button
+                type="button"
+                className={styles.clear}
+                disabled={search.length === 0}
+                onClick={() => setSearch('')}
+              >
+                Clear
+              </button>
+            </div>
+            {term ? (
+              <p className={styles.searchHint}>
+                {searched.length === 0
+                  ? `Nothing matching “${search}”.`
+                  : `${searched.length} match${searched.length === 1 ? '' : 'es'}.`}
+              </p>
+            ) : null}
+            {searched.map(venueRow)}
+          </>
+        ) : null}
+
+        <p className={styles.kicker}>Slots · your local time</p>
         {data.suggestedSlots.map((slot) => (
           <button
             key={slot}
@@ -279,17 +333,25 @@ export default function CoffeePage({ params }: { params: Promise<{ id: string }>
           </button>
         ))}
 
+        <p className={styles.note}>
+          Nothing is charged and no table is held — {data.theirName} gets these times in the
+          chat and confirms one.
+        </p>
+
         <PrimaryButton
+          className={styles.cta}
           label="Propose these times"
-          disabled={!venueId || busy}
+          disabled={(mode === 'in_person' && !venueId) || busy}
           onClick={() =>
             void act(
-              { matchId, venueId, slots: data.suggestedSlots },
+              { matchId, mode, venueId: mode === 'in_person' ? venueId : null, slots: data.suggestedSlots },
               '/api/bookings',
               'Sent. They pick one of the two times.',
             )
           }
         />
+
+        <p className={styles.footnote}>Either of you can cancel this from here.</p>
 
         {message ? (
           <p className={styles.status} role="status">

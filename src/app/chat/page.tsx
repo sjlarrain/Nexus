@@ -3,11 +3,17 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
-import { Card, Chip, hatchClass } from '@/components/ui';
+import { hatchClass } from '@/components/ui';
+import { relativeWhen } from '@/lib/chat/when';
 import type { Card as CardType } from '@/lib/cards/card';
 import styles from './chat.module.css';
 
-/** Conversation list. */
+/**
+ * Conversation list, in the shape of docs/mocks/planup-chat-prototype.html: a
+ * "Conversations" heading over flat rows of avatar, name, when, and the last line
+ * said. The rows are not cards in the mock — the hairline between screens does the
+ * separating, and a hover fill is the only chrome a row gets.
+ */
 
 type MatchSummary = {
   matchId: string;
@@ -68,29 +74,34 @@ export default function MatchesPage() {
 
   return (
     <AppShell>
-      {matches.length === 0 ? <p className={styles.empty}>No matches yet. Try the deck.</p> : null}
-
       <div className={styles.list}>
+        <h1 className={styles.listHeading}>Conversations</h1>
+
+        {matches.length === 0 ? (
+          <p className={styles.empty}>No matches yet. Try the deck.</p>
+        ) : null}
+
         {matches.map((match) => {
           const photo = match.counterpart.photos[0];
+          // A thread with nothing said in it is as old as the match itself.
+          const at = match.lastMessage?.at ?? match.createdAt;
           return (
-            <Link key={match.matchId} href={`/chat/${match.matchId}`}>
-              <Card className={styles.row}>
-                <div className={`${styles.thumb} ${hatchClass}`}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {photo ? <img src={photo.url} alt="" /> : null}
-                </div>
+            <Link key={match.matchId} href={`/chat/${match.matchId}`} className={styles.row}>
+              <div className={`${styles.thumb} ${hatchClass}`}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {photo ? <img src={photo.url} alt="" /> : null}
+              </div>
 
-                <div className={styles.rowBody}>
+              <div className={styles.rowBody}>
+                <div className={styles.rowTop}>
                   <h2 className={styles.rowName}>{match.counterpart.name}</h2>
-                  <p className={styles.rowRole}>{match.counterpart.deckLine}</p>
-                  <p className={styles.preview}>
-                    {match.lastMessage ? match.lastMessage.text : 'You matched. Say something.'}
-                  </p>
+                  <span className={styles.rowWhen}>{relativeWhen(at)}</span>
                 </div>
-
-                {match.booked ? <Chip tone="amber">Coffee</Chip> : null}
-              </Card>
+                <p className={styles.preview}>
+                  {match.booked ? <span className={styles.coffeeDot} aria-hidden="true" /> : null}
+                  {match.lastMessage ? match.lastMessage.text : 'You matched. Say something.'}
+                </p>
+              </div>
             </Link>
           );
         })}

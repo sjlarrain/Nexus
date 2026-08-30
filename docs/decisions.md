@@ -759,3 +759,22 @@ manufacturing the matches this change exists to stop making.
 has worked through part of its Likes screen has consumed those likes into matches,
 which is the intended direction of travel, so the sum is the coverage number rather
 than the likes alone.
+
+## 2026-08-30 — Publishing arms the quick tips; the deck no longer triggers them
+
+**The tour is armed by a successful publish and by nothing else** (`armTips()` in
+`src/lib/tips/tips.ts`, called from the publish handler). It used to fire on the first
+deck visit by a device that had never seen it, which spent the tour on the wrong
+visit: Save & exit drops an unfinished profile straight onto the deck, so the one
+run-through was routinely burned before the user had a card at all — and the localStorage
+flag it set meant it never came back. Publishing is the one moment somebody is
+demonstrably finished setting up and about to swipe.
+
+The stored value is now three-state in effect — absent, `pending`, `done` — rather
+than a seen/not-seen boolean, so an old device carrying the previous key simply never
+matches `pending` and waits to be armed properly. `?tips=1` still replays it on demand.
+
+**A tip whose target is not on screen is stepped over rather than stalled on.** The
+swipe row does not render when the deck has run out; measuring `null` used to leave
+the tour mounted with nothing to show and no way forward.
+

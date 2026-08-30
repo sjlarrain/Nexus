@@ -8,6 +8,7 @@ import PublishedMoment from '@/components/PublishedMoment';
 import { Step1, Step2, Step3, Step4, Step5, STEP_HEADINGS } from '../steps';
 import { allStepsComplete, canPublish, gateForStep } from '@/lib/onboarding/gates';
 import { toCard } from '@/lib/cards/card';
+import { armTips } from '@/lib/tips/tips';
 import type { Profile } from '@/lib/schemas/profile';
 import styles from '../onboarding.module.css';
 
@@ -117,6 +118,9 @@ export default function OnboardingStepPage({ params }: { params: Promise<{ step:
         setMessage((body as { error?: string }).error ?? 'Could not publish.');
         return;
       }
+      // The deck's quick tips are armed here and nowhere else: this is the one moment
+      // somebody is finished setting up and about to swipe (src/lib/tips/tips.ts).
+      armTips();
       setPublished(true);
     } finally {
       setBusy(false);

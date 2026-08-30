@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type RefObject } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { TIPS, hasSeenTips, markTipsSeen } from '@/lib/tips/tips';
+import { TIPS, dismissTips, tipsPending } from '@/lib/tips/tips';
 import styles from './TipsTour.module.css';
 
 type Rect = { top: number; left: number; width: number; height: number };
@@ -26,9 +26,12 @@ function measure(el: HTMLElement | null): Rect | null {
 }
 
 /**
- * First-run product tour over the deck (docs/mocks/planup-quick-tips.html): a
- * spotlight ring around the real element, plus a callout beside it — never a fixed
- * panel that could cover the very thing being pointed at.
+ * The product tour over the deck (docs/mocks/planup-quick-tips.html): a spotlight ring
+ * around the real element, plus a callout beside it — never a fixed panel that could
+ * cover the very thing being pointed at.
+ *
+ * It runs once, after the card is published and not before — `tipsPending()` in
+ * src/lib/tips/tips.ts says why — or on demand with `?tips=1`.
  *
  * Each target is scrolled into view first (the deck card is often taller than the
  * screen), then the callout goes below it if there is room, above it if there is
@@ -44,21 +47,36 @@ export default function TipsTour({ targets }: { targets: TourTargets }) {
   const searchParams = useSearchParams();
   const replay = searchParams.get('tips') === '1';
 
-  const [step, setStep] = useState(() => (replay || !hasSeenTips() ? 1 : 0));
+  const [step, setStep] = useState(() => (replay || tipsPending() ? 1 : 0));
   const [rect, setRect] = useState<Rect | null>(null);
 
   const target = TIPS[step - 1]?.target ?? null;
 
+  const finish = useCallback(() => {
+    setStep(0);
+    dismissTips();
+    if (replay) router.replace('/deck');
+  }, [replay, router]);
+
   // Deferred so the setState is never called synchronously inside the effect body,
   // and so the scroll (instant, but still a layout pass) settles before measuring.
   useEffect(() => {
+    if (step === 0) return;
     const timer = setTimeout(() => {
       const el = target ? targets[target].current : null;
-      el?.scrollIntoView({ block: 'start', behavior: 'auto' });
+      // A target that is not on screen — the swipe row when the deck has run out —
+      // has nothing to point at, so the tour steps over it rather than stalling on
+      // a spotlight it cannot measure.
+      if (!el) {
+        if (step >= TIPS.length) finish();
+        else setStep(step + 1);
+        return;
+      }
+      el.scrollIntoView({ block: 'start', behavior: 'auto' });
       setRect(measure(el));
     }, 0);
     return () => clearTimeout(timer);
-  }, [target, targets]);
+  }, [step, target, targets, finish]);
 
   useEffect(() => {
     if (step === 0) return;
@@ -68,12 +86,6 @@ export default function TipsTour({ targets }: { targets: TourTargets }) {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [step, target, targets]);
-
-  const finish = useCallback(() => {
-    setStep(0);
-    markTipsSeen();
-    if (replay) router.replace('/deck');
-  }, [replay, router]);
 
   useEffect(() => {
     if (step === 0) return;

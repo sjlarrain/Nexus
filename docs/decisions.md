@@ -759,3 +759,63 @@ manufacturing the matches this change exists to stop making.
 has worked through part of its Likes screen has consumed those likes into matches,
 which is the intended direction of travel, so the sum is the coverage number rather
 than the likes alone.
+
+## 2026-08-30 — Publishing arms the quick tips; the deck no longer triggers them
+
+**The tour is armed by a successful publish and by nothing else** (`armTips()` in
+`src/lib/tips/tips.ts`, called from the publish handler). It used to fire on the first
+deck visit by a device that had never seen it, which spent the tour on the wrong
+visit: Save & exit drops an unfinished profile straight onto the deck, so the one
+run-through was routinely burned before the user had a card at all — and the localStorage
+flag it set meant it never came back. Publishing is the one moment somebody is
+demonstrably finished setting up and about to swipe.
+
+The stored value is now three-state in effect — absent, `pending`, `done` — rather
+than a seen/not-seen boolean, so an old device carrying the previous key simply never
+matches `pending` and waits to be armed properly. `?tips=1` still replays it on demand.
+
+**A tip whose target is not on screen is stepped over rather than stalled on.** The
+swipe row does not render when the deck has run out; measuring `null` used to leave
+the tour mounted with nothing to show and no way forward.
+
+## 2026-08-30 — Reserving a table books it; it does not propose it
+
+**In person, the CTA now creates a `confirmed` booking on the one café and the one
+time the user picked, and hands them back to the chat** (`hold: true` →
+`createBooking`, formerly `proposeBooking`). The confirmation is a card in the
+conversation, next to the messages that led to it, which is what the owner's mock
+shows.
+
+This is a real product change, made on explicit instruction. The asker is the one
+holding the table, so there is nothing for the other side to choose — a "proposed"
+state in between was asking a question nobody needed answered. **Video calls keep
+propose-then-accept:** there is no table to hold, so two times and a confirmation from
+the other side is still the honest flow. The two paths part at the CTA and nowhere
+else.
+
+**No price, and no "paid by you".** The mock charges $24 to hold the table; there is
+still no payment provider, so the note says the table is held free and the card says
+"table for 2 held" (the earlier decision on this stands).
+
+**The system message carries no absolute time** — "A table for two is held at Blue
+Bottle Coffee." The confirmed card directly beneath it renders the slot in each
+reader's own timezone, which a frozen string in the message body cannot.
+
+## 2026-08-30 — In person holds the table on the server's say-so, not the client's
+
+**`hold` is gone from the request; `createBooking` derives it from the mode.** The
+first cut let the booking screen ask for a held table, which meant a client that did
+not ask still got the old propose-then-accept flow — exactly what a tab loaded before
+the change does, and it landed the owner on "Times sent." after tapping Reserve table,
+with the two suggested times rather than the one they picked.
+
+Holding is the product rule for in person, not a client preference, so it belongs on
+the server: any in-person booking is confirmed on the first time it is given, and a
+video call is always proposed. A stale bundle now produces the right booking anyway.
+
+**A held booking stores only the time it is held for.** Keeping the second suggestion
+in `slots` on a confirmed booking left a choice on record that nobody can make.
+
+**The in-person bookings already stuck in `proposed` were confirmed in place**, on
+their first slot, with the same system line the flow posts, since the screens no
+longer offer any way to advance them.

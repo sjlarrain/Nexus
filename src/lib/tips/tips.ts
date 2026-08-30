@@ -33,33 +33,42 @@ export const TIPS: Tip[] = [
   },
 ];
 
-const STORAGE_KEY = 'warm-intro:tips-seen';
+const STORAGE_KEY = 'warm-intro:tips';
 
 /**
+ * The tour is *armed* by publishing a card, not by the first sight of the deck.
+ *
+ * Arriving on the deck is not the moment to teach the deck: Save & exit drops an
+ * unfinished profile there, and a tour spent on that visit is a tour the user never
+ * gets when it matters. Publishing is the one point where somebody is definitely
+ * done setting up and definitely about to swipe, so `armTips()` is called there and
+ * the tour fires on the very next deck render.
+ *
  * Per-device only — there is no per-account "has this user seen the tour" field in
  * the profile, and adding one for a three-step tooltip is more state than the
- * feature is worth. A blocked store (private browsing) counts as seen, so the tour
- * fails quiet rather than nagging on every load.
+ * feature is worth. A blocked store (private browsing) simply never arms, so the
+ * tour fails quiet rather than looping.
  */
-export function hasSeenTips(): boolean {
+export function armTips(): void {
   try {
-    return window.localStorage.getItem(STORAGE_KEY) === '1';
+    window.localStorage.setItem(STORAGE_KEY, 'pending');
   } catch {
-    return true;
+    // Worst case the tour never runs — not worth surfacing an error for.
   }
 }
 
-export function markTipsSeen(): void {
+export function tipsPending(): boolean {
   try {
-    window.localStorage.setItem(STORAGE_KEY, '1');
+    return window.localStorage.getItem(STORAGE_KEY) === 'pending';
   } catch {
-    // Worst case the tour reappears next visit — not worth surfacing an error for.
+    return false;
   }
 }
 
-export function clearTipsSeen(): void {
+/** Finished or skipped: the tour is spent until something arms it again. */
+export function dismissTips(): void {
   try {
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.setItem(STORAGE_KEY, 'done');
   } catch {
     // ignore
   }
